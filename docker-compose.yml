@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Servicio de Base de Datos MySQL
+  mysql-proyectos:
+    image: mysql:8.0
+    container_name: mysql-proyectos
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - proyectos-net
+
+  # Servicio Backend Spring Boot (Java 21)
+  backend-proyectos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-proyectos
+    restart: always
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      SERVER_PORT: ${SERVER_PORT}
+    depends_on:
+      - mysql-proyectos
+    networks:
+      - proyectos-net
+
+volumes:
+  mysql_data:
+
+networks:
+  proyectos-net:
+    driver: bridge
