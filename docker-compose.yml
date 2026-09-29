@@ -34,6 +34,7 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       SERVER_PORT: ${SERVER_PORT}
+      INIT_DATA: ${INIT_DATA}
     depends_on:
       - mysql-proyectos
     networks:
