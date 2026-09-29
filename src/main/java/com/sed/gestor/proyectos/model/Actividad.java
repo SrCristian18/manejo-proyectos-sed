@@ -2,24 +2,48 @@ package com.sed.gestor.proyectos.model;
 
 import java.time.LocalDate;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
+
+@Entity 
+@Table (name = "actividades")
 public class Actividad {
+
+    @Id 
+    @GeneratedValue (strategy = GenerationType.IDENTITY)
     private Long id;
-    private Proyecto proyecto;
+
+    @Column (name = "nombre", nullable = false, length = 500)
     private String nombre;
+
+    @Column (name = "fecha_inicio")
     private LocalDate fechaInicio;
+
+    @Column (name = "fecha_final")
     private LocalDate fechaFinal;
+
+    @ManyToOne (fetch = FetchType.LAZY)
+    @JoinColumn (name = "proyecto_id", nullable = false)
+    private Proyecto proyecto;
 
     public Actividad()
     {
 
     }
 
-    public Actividad(Long id, Proyecto proyecto, String nombre, LocalDate fechaInicio, LocalDate fechaFinal) {
-        this.id = id;
-        this.proyecto = proyecto;
+    public Actividad(String nombre, LocalDate fechaInicio, LocalDate fechaFinal, Proyecto proyecto) {
         this.nombre = nombre;
         this.fechaInicio = fechaInicio;
         this.fechaFinal = fechaFinal;
+        this.proyecto = proyecto;
     }
 
     public Long getId() {
