@@ -12,7 +12,7 @@ import com.sed.gestor.proyectos.model.DetalleMovimiento;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 
 @Repository 
-public interface DetalleMovimientoRepository extends JpaRepository<DetalleMovimientoRepository,Long>{
+public interface DetalleMovimientoRepository extends JpaRepository<DetalleMovimiento,Long>{
     @Query("SELECT COALESCE(SUM(d.monto), 0) FROM DetalleMovimiento d " +
            "WHERE d.actividad.id = :actividadId AND d.fuente = :fuente")
     BigDecimal calcularSaldoAcumuladoByActividadYFuente(
