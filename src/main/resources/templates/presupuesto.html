@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layout :: main-layout('Seguimiento Presupuestal', ~{::section})}">
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0"><i class="fa-solid fa-wallet text-primary me-2"></i>Saldos y Distribución Presupuestal</h3>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMovimiento">
+            <i class="fa-solid fa-plus me-1"></i> Registrar Modificación / CDP
+        </button>
+    </div>
+
+    <!-- Tabla de Actividades y Saldos -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Actividad (Hito)</th>
+                            <th class="text-end">Saldo PROPIOS ($)</th>
+                            <th class="text-end">Saldo SGP ($)</th>
+                            <th class="text-end">Total Disponible ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="act, iter : ${actividades}">
+                            <td th:text="${iter.count}">1</td>
+                            <td class="fw-semibold" th:text="${act.nombre}">Nombre Actividad</td>
+                            <td class="text-end text-primary" th:text="${'$' + #numbers.formatDecimal(saldosPropios[act.id], 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td class="text-end text-success" th:text="${'$' + #numbers.formatDecimal(saldosSgp[act.id], 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td class="text-end fw-bold" th:text="${'$' + #numbers.formatDecimal(saldosPropios[act.id].add(saldosSgp[act.id]), 1, 'POINT', 0, 'COMMA')}">$0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Movimiento -->
+    <div class="modal fade" id="modalMovimiento" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Nuevo Acto Administrativo / Modificación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formMovimiento">
+                    <div class="modal-body">
+                        <input type="hidden" id="proyectoId" th:value="${proyecto != null ? proyecto.id : ''}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de Movimiento</label>
+                                <select class="form-select" id="tipoMovimiento" required>
+                                    <option th:each="tipo : ${tiposMovimiento}" th:value="${tipo}" th:text="${tipo}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Número Decreto / Soporte</label>
+                                <input type="text" class="form-control" id="numeroDecreto" placeholder="Ej: Decreto No.0304" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Actividad Afectada</label>
+                                <select class="form-select" id="actividadId" required>
+                                    <option th:each="act : ${actividades}" th:value="${act.id}" th:text="${act.nombre}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fuente Financiación</label>
+                                <select class="form-select" id="fuente" required>
+                                    <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Monto ($) <small class="text-muted">(Usar valores negativos para reducciones o CDP)</small></label>
+                                <input type="number" step="0.01" class="form-control" id="monto" placeholder="Ej: 500000000 o -200000000" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="enviarMovimiento()">Guardar Cambio</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function enviarMovimiento() {
+            const body = {
+                proyectoId: document.getElementById('proyectoId').value,
+                tipoMovimiento: document.getElementById('tipoMovimiento').value,
+                numeroDecreto: document.getElementById('numeroDecreto').value,
+                detalles: [{
+                    actividadId: document.getElementById('actividadId').value,
+                    fuente: document.getElementById('fuente').value,
+                    monto: document.getElementById('monto').value
+                }]
+            };
+
+            fetch('/api/presupuesto/movimiento', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje); });
+                return res.json();
+            })
+            .then(() => location.reload())
+            .catch(err => alert("Error: " + err.message));
+        }
+    </script>
+</section>
+</body>
+</html>

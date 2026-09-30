@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layout :: main-layout('Dashboard Ejecutivo', ~{::section})}">
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0" th:text="${proyecto != null ? proyecto.nombre : 'Proyecto no cargado'}">Nombre Proyecto</h2>
+            <p class="text-muted mb-0">BPIN: <span class="fw-bold text-dark" th:text="${proyecto != null ? proyecto.codigoBpin : 'N/A'}"></span></p>
+        </div>
+        <div>
+            <form method="get" action="/" class="d-flex gap-2">
+                <select name="vigencia" class="form-select" onchange="this.form.submit()">
+                    <option value="2026" th:selected="${vigencia == 2026}">Vigencia 2026</option>
+                    <option value="2025" th:selected="${vigencia == 2025}">Vigencia 2025</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cards KPI -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card card-counter shadow-sm h-100 p-3 bg-white">
+                <div class="text-muted small text-uppercase">Disponible Rec. Propios</div>
+                <div class="fs-4 fw-bold text-primary" th:text="${'$' + #numbers.formatDecimal(totalPropios, 1, 'POINT', 0, 'COMMA')}">$0</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-counter-success shadow-sm h-100 p-3 bg-white">
+                <div class="text-muted small text-uppercase">Disponible SGP</div>
+                <div class="fs-4 fw-bold text-success" th:text="${'$' + #numbers.formatDecimal(totalSgp, 1, 'POINT', 0, 'COMMA')}">$0</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-counter-warning shadow-sm h-100 p-3 bg-white">
+                <div class="text-muted small text-uppercase">Avance Físico Promedio Metas PDD</div>
+                <div class="fs-4 fw-bold text-dark" th:text="${dashboard != null ? dashboard.porcentajeAvanceFisicoPromedio + '%' : '0%'}">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm p-3 bg-white">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-pie-chart text-primary me-2"></i>Distribución de Saldos Disponible</h5>
+                <canvas id="chartPresupuesto" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm p-3 bg-white">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-bar text-success me-2"></i>Avance de Metas de Producto PDD (%)</h5>
+                <canvas id="chartMetas" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Inicialización de Chart.js -->
+    <script th:inline="javascript">
+        /* Data inyectada desde Spring Boot */
+        const totalPropios = /*[[${totalPropios}]]*/ 0;
+        const totalSgp = /*[[${totalSgp}]]*/ 0;
+        const resumenMetas = /*[[${dashboard.resumenMetas}]]*/ [];
+
+        // 1. Gráfico de Torta: Presupuesto
+        new Chart(document.getElementById('chartPresupuesto'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Recursos Propios', 'SGP'],
+                datasets: [{
+                    data: [totalPropios, totalSgp],
+                    backgroundColor: ['#0d6efd', '#198754']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // 2. Gráfico de Barras: Metas PDD
+        const labelsMetas = resumenMetas.map(m => m.descripcionMeta.substring(0, 30) + '...');
+        const dataAvances = resumenMetas.map(m => m.porcentajeAvanceSimple);
+
+        new Chart(document.getElementById('chartMetas'), {
+            type: 'bar',
+            data: {
+                labels: labelsMetas,
+                datasets: [{
+                    label: '% Cumplimiento',
+                    data: dataAvances,
+                    backgroundColor: '#ffc107'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+</section>
+</body>
+</html>

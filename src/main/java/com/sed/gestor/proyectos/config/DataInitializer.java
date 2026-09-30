@@ -10,11 +10,14 @@ import org.springframework.context.annotation.Configuration;
 
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.DetalleMovimiento;
+import com.sed.gestor.proyectos.model.MetaProducto;
+import com.sed.gestor.proyectos.service.MetaService;
 import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
 import com.sed.gestor.proyectos.model.Proyecto;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
 import com.sed.gestor.proyectos.repository.ProyectoRepository;
+import com.sed.gestor.proyectos.repository.MetaProductoRepository;
 import com.sed.gestor.proyectos.service.PresupuestoService;
 
 @Configuration 
@@ -22,7 +25,7 @@ import com.sed.gestor.proyectos.service.PresupuestoService;
 public class DataInitializer {
     
     @Bean 
-    CommandLineRunner initDatabase(ProyectoRepository proyectoRepository, PresupuestoService presupuestoService){
+    CommandLineRunner initDatabase(ProyectoRepository proyectoRepository, PresupuestoService presupuestoService, MetaProductoRepository metaProductoRepository, MetaService metaService){
         return args -> {
             if(proyectoRepository.count() > 0) return;
 
@@ -65,6 +68,35 @@ public class DataInitializer {
 
             presupuestoService.registrarMovimiento(inicial);
             System.out.println(">>> [INIT_DATA=true] Base de datos inicializada con el proyecto BPIN 2024130010248.");
+
+            // Dentro del método initDatabase en DataInitializer.java (después de guardar la Apropiación Inicial):
+
+            // Crear Meta PDD 1
+            MetaProducto meta1 = new MetaProducto();
+            meta1.setCodigoPrograma("02-02-07");
+            meta1.setDescripcionMeta("Mejorar y/o adecuar ochenta (80) sedes educativas.");
+            meta1.setUnidadMedida("Número");
+            meta1.setProgramacionCuatrienio(new BigDecimal("80"));
+            meta1.setProgramacionVigencia(new BigDecimal("20")); // Meta 2026
+            meta1.setPonderacion(new BigDecimal("0.30"));
+            meta1.setActividad(act1); // Asociada a la Actividad "Mejorar y/o adecuar sedes educativas"
+
+            // Crear Meta PDD 2
+            MetaProducto meta2 = new MetaProducto();
+            meta2.setCodigoPrograma("02-02-03");
+            meta2.setDescripcionMeta("Formular e implementar un (1) Plan Maestro de Infraestructura Educativa.");
+            meta2.setUnidadMedida("Porcentaje");
+            meta2.setProgramacionCuatrienio(new BigDecimal("100"));
+            meta2.setProgramacionVigencia(new BigDecimal("100"));
+            meta2.setPonderacion(new BigDecimal("0.10"));
+            meta2.setActividad(act5); // Asociada a "Elaborar Plan Maestro"
+
+            metaProductoRepository.save(meta1);
+            metaProductoRepository.save(meta2);
+
+            // Agregar avance de prueba
+            metaService.registrarAvance(meta1.getId(), 1, 2026, new BigDecimal("5"), "Concluidas 5 sedes en Q1");// Dentro del método initDatabase en DataInitializer.java (después de guardar la Apropiación Inicial):
+
         };
     }
 
