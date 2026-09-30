@@ -11,26 +11,44 @@
     </div>
 
     <!-- Tabla de Actividades y Saldos -->
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calculator text-primary me-2"></i>Estado de Ejecución y Techos Presupuestales</h5>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                    <thead class="table-light text-uppercase small">
                         <tr>
-                            <th>#</th>
                             <th>Actividad (Hito)</th>
-                            <th class="text-end">Saldo PROPIOS ($)</th>
-                            <th class="text-end">Saldo SGP ($)</th>
-                            <th class="text-end">Total Disponible ($)</th>
+                            <th>Fuente</th>
+                            <th class="text-end">Aprop. Inicial</th>
+                            <th class="text-end">Adiciones (+)</th>
+                            <th class="text-end">Reducciones (-)</th>
+                            <th class="text-end">Aprop. Definitiva</th>
+                            <th class="text-end text-danger">Ejecutado (CDP/RP)</th>
+                            <th class="text-end text-success fw-bold">Saldo Disponible</th>
+                            <th class="text-center" style="width: 150px;">% Ejecución</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="act, iter : ${actividades}">
-                            <td th:text="${iter.count}">1</td>
-                            <td class="fw-semibold" th:text="${act.nombre}">Nombre Actividad</td>
-                            <td class="text-end text-primary" th:text="${'$' + #numbers.formatDecimal(saldosPropios[act.id], 1, 'POINT', 0, 'COMMA')}">$0</td>
-                            <td class="text-end text-success" th:text="${'$' + #numbers.formatDecimal(saldosSgp[act.id], 1, 'POINT', 0, 'COMMA')}">$0</td>
-                            <td class="text-end fw-bold" th:text="${'$' + #numbers.formatDecimal(saldosPropios[act.id].add(saldosSgp[act.id]), 1, 'POINT', 0, 'COMMA')}">$0</td>
+                        <tr th:each="item : ${resumenPresupuestal}">
+                            <td class="fw-semibold" th:text="${item.nombreActividad}">Actividad</td>
+                            <td><span class="badge bg-secondary" th:text="${item.fuente}">PROPIOS</span></td>
+                            <td class="text-end" th:text="${'$' + #numbers.formatDecimal(item.apropiacionInicial, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td class="text-end text-success" th:text="${'+$' + #numbers.formatDecimal(item.adiciones, 1, 'POINT', 0, 'COMMA')}">+$0</td>
+                            <td class="text-end text-warning" th:text="${'-$' + #numbers.formatDecimal(item.reducciones, 1, 'POINT', 0, 'COMMA')}">-$0</td>
+                            <td class="text-end fw-bold" th:text="${'$' + #numbers.formatDecimal(item.apropiacionDefinitiva, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td class="text-end text-danger fw-bold" th:text="${'$' + #numbers.formatDecimal(item.ejecutadoCompromisos, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td class="text-end text-success fw-bold fs-6" th:text="${'$' + #numbers.formatDecimal(item.saldoDisponible, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td>
+                                <div class="progress" style="height: 18px;">
+                                    <div class="progress-bar bg-info text-dark fw-bold" 
+                                        role="progressbar" 
+                                        th:style="'width: ' + ${item.porcentajeEjecucion} + '%'"
+                                        th:text="${item.porcentajeEjecucion + '%'}">0%</div>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

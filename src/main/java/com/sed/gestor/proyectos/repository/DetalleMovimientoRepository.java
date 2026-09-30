@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.sed.gestor.proyectos.model.DetalleMovimiento;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
+import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
 
 @Repository 
 public interface DetalleMovimientoRepository extends JpaRepository<DetalleMovimiento,Long>{
@@ -24,4 +25,12 @@ public interface DetalleMovimientoRepository extends JpaRepository<DetalleMovimi
            "WHERE d.actividad.id = :actividadId")
     BigDecimal calcularSaldoAcumuladoTotalByActividad(@Param("actividadId") Long actividadId);
     List<DetalleMovimiento> findByActividadId(Long actividadId);
+
+    @Query ("SELECT COALESCE(SUM(d.monto), 0) FROM DetalleMovimiento d " +
+       "WHERE d.actividad.id = :actividadId AND d.fuente = :fuente AND d.movimiento.tipoMovimiento = :tipo")
+    BigDecimal sumarMontoPorActividadFuenteYTipo(
+        @Param ("actividadId") Long actividadId,
+        @Param ("fuente") FuenteFinanciacion fuente,
+        @Param ("tipo") TipoMovimiento tipo
+       );
 }
