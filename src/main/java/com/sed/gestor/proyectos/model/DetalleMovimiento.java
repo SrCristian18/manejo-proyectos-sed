@@ -3,6 +3,7 @@ package com.sed.gestor.proyectos.model;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 
 import jakarta.persistence.Column;
@@ -27,10 +28,12 @@ public class DetalleMovimiento {
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "movimiento_id", nullable = false)
+    @JsonIgnoreProperties ("detalles") 
     private MovimientoPresupuestal movimiento;
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "actividad_id", nullable = false)
+    @JsonIgnoreProperties ("proyecto")
     private Actividad actividad;
 
     @Enumerated (EnumType.STRING)

@@ -5,7 +5,7 @@ services:
   mysql-proyectos:
     image: mysql:8.0
     container_name: mysql-proyectos
-    restart: always
+    restart: "no"
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: backend-proyectos
-    restart: always
+    restart: "no"
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     environment:

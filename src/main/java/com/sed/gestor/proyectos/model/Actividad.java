@@ -2,6 +2,8 @@ package com.sed.gestor.proyectos.model;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -32,6 +34,7 @@ public class Actividad {
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "proyecto_id", nullable = false)
+    @JsonIgnoreProperties ("actividades")
     private Proyecto proyecto;
 
     public Actividad()

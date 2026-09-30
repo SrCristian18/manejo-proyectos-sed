@@ -1,6 +1,8 @@
 package com.sed.gestor.proyectos.controller;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,9 +48,9 @@ public class PresupuestoController {
         }
 
     @PostMapping ("/movimiento")
-    public ResponseEntity<MovimientoPresupuestal> registrarMovimiento(@RequestBody MovimientoRequest request){
+    public ResponseEntity<Map<String, Object>> registrarMovimiento(@RequestBody MovimientoRequest request) {
         Proyecto proyecto = proyectoRepository.findById(request.getProyectoId())
-            .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado con ID: "+ request.getProyectoId()));
+                .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado con ID: " + request.getProyectoId()));
 
         MovimientoPresupuestal movimiento = new MovimientoPresupuestal();
         movimiento.setProyecto(proyecto);
@@ -59,7 +61,7 @@ public class PresupuestoController {
 
         request.getDetalles().forEach(d -> {
             Actividad actividad = actividadRepository.findById(d.getActividadId())
-            .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada con ID: "+ d.getActividadId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada con ID: " + d.getActividadId()));
 
             DetalleMovimiento detalle = new DetalleMovimiento();
             detalle.setActividad(actividad);
@@ -69,8 +71,15 @@ public class PresupuestoController {
             detalle.setNumeroRp(d.getNumeroRp());
 
             movimiento.addDetalle(detalle);
-        });
+    });
         MovimientoPresupuestal guardado = presupuestoService.registrarMovimiento(movimiento);
-        return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
+
+        // Respuesta limpia para evitar serializar entidades compuestas
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("mensaje", "Movimiento registrado exitosamente");
+        response.put("id", guardado.getId());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

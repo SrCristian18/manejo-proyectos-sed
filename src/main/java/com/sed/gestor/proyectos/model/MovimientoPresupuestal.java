@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
 
 import jakarta.persistence.CascadeType;
@@ -30,6 +31,7 @@ public class MovimientoPresupuestal {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "proyecto_id", nullable = false)
+    @JsonIgnoreProperties ("actividades")
     private Proyecto proyecto;
 
     @Enumerated(EnumType.STRING)
@@ -49,6 +51,7 @@ public class MovimientoPresupuestal {
     private String observaciones;
 
     @OneToMany (mappedBy = "movimiento", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties ("movimiento")
     private List<DetalleMovimiento> detalles = new ArrayList<>();
 
     public MovimientoPresupuestal() {
