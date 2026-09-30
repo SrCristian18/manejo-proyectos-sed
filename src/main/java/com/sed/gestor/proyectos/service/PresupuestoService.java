@@ -9,6 +9,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
 import com.sed.gestor.proyectos.exception.PresupuestoInsuficienteException;
 import com.sed.gestor.proyectos.model.Actividad;
@@ -62,45 +63,55 @@ public class PresupuestoService {
         }
         return movimientoRepository.save(movimiento);
     }
-    
-    public List<PresupuestoResumenDTO> obtenerResumenPresupuestal(Long proyectoId){
+
+    @Transactional(readOnly = true)
+    public List<PresupuestoResumenDTO> obtenerResumenPresupuestal(Long proyectoId) {
         List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoId);
         List<PresupuestoResumenDTO> listaResumen = new ArrayList<>();
 
-        for(Actividad act : actividades){
-            for(FuenteFinanciacion fuente: FuenteFinanciacion.values()){
-                BigDecimal inicial = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.APROPIACION_INICIAL);
-                BigDecimal adiciones = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.ADICION_CREDITO);
-                BigDecimal reducciones = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.REDUCCION_CONTRACREDITO).abs();
-                BigDecimal ejecucion = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.EJECUCION_CDP_RP).abs();
+        for (Actividad act : actividades) {
+                PresupuestoResumenDTO dto = new PresupuestoResumenDTO();
+                dto.setActividadId(act.getId());
+                dto.setNombreActividad(act.getNombre());
 
-                // Cálculos dinámicos
-                BigDecimal definitiva = inicial.add(adiciones).subtract(reducciones);
-                BigDecimal disponible = definitiva.subtract(ejecucion);
-                
-                BigDecimal pctEjecucion = BigDecimal.ZERO;
-                if (definitiva.compareTo(BigDecimal.ZERO) > 0) {
-                pctEjecucion = ejecucion.multiply(new BigDecimal("100")).divide(definitiva, 2, RoundingMode.HALF_UP);
-                }
-                
-                if (definitiva.compareTo(BigDecimal.ZERO) > 0 || disponible.compareTo(BigDecimal.ZERO) != 0) {
-                    PresupuestoResumenDTO dto = new PresupuestoResumenDTO();
-                    dto.setActividadId(act.getId());
-                    dto.setNombreActividad(act.getNombre());
-                    dto.setFuente(fuente);
-                    dto.setApropiacionInicial(inicial);
-                    dto.setAdiciones(adiciones);
-                    dto.setReducciones(reducciones);
-                    dto.setApropiacionDefinitiva(definitiva);
-                    dto.setEjecutadoCompromisos(ejecucion);
-                    dto.setSaldoDisponible(disponible);
-                    dto.setPorcentajeEjecucion(pctEjecucion);
+                BigDecimal acumuladoDefinitivaTotal = BigDecimal.ZERO;
+                BigDecimal acumuladoEjecutadoTotal = BigDecimal.ZERO;
+                BigDecimal acumuladoDisponibleTotal = BigDecimal.ZERO;
 
-                    listaResumen.add(dto);
+            // Bucle dinámico sobre CUALQUIER cantidad de fuentes de financiación
+            for (FuenteFinanciacion fuente : FuenteFinanciacion.values()) {
+                    BigDecimal init = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.APROPIACION_INICIAL);
+                    BigDecimal adic = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.ADICION_CREDITO);
+                    BigDecimal red = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.REDUCCION_CONTRACREDITO).abs();
+                    BigDecimal ejec = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.EJECUCION_CDP_RP).abs();
+
+                    BigDecimal def = init.add(adic).subtract(red);
+                    BigDecimal disp = def.subtract(ejec);
+
+                    MetricasFuenteDTO metrica = dto.getMetrica(fuente);
+                    metrica.setApropiacionInicial(init);
+                    metrica.setAdiciones(adic);
+                    metrica.setReducciones(red);
+                    metrica.setApropiacionDefinitiva(def);
+                    metrica.setEjecutado(ejec);
+                    metrica.setSaldoDisponible(disp);
+
+                    acumuladoDefinitivaTotal = acumuladoDefinitivaTotal.add(def);
+                    acumuladoEjecutadoTotal = acumuladoEjecutadoTotal.add(ejec);
+                    acumuladoDisponibleTotal = acumuladoDisponibleTotal.add(disp);
                 }
-            }
+
+            BigDecimal pctEjecucion = BigDecimal.ZERO;
+                if (acumuladoDefinitivaTotal.compareTo(BigDecimal.ZERO) > 0) {
+                    pctEjecucion = acumuladoEjecutadoTotal.multiply(new BigDecimal("100"))
+                            .divide(acumuladoDefinitivaTotal, 2, RoundingMode.HALF_UP);
+                }
+
+            dto.setDisponibleTotal(acumuladoDisponibleTotal);
+            dto.setPorcentajeEjecucion(pctEjecucion);
+
+            listaResumen.add(dto);
         }
-            return listaResumen;
+        return listaResumen;
     }
-
 }

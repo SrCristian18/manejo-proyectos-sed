@@ -12,49 +12,59 @@
 
     <!-- Tabla de Actividades y Saldos -->
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calculator text-primary me-2"></i>Estado de Ejecución y Techos Presupuestales</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light text-uppercase small">
-                        <tr>
-                            <th>Actividad (Hito)</th>
-                            <th>Fuente</th>
-                            <th class="text-end">Aprop. Inicial</th>
-                            <th class="text-end">Adiciones (+)</th>
-                            <th class="text-end">Reducciones (-)</th>
-                            <th class="text-end">Aprop. Definitiva</th>
-                            <th class="text-end text-danger">Ejecutado (CDP/RP)</th>
-                            <th class="text-end text-success fw-bold">Saldo Disponible</th>
-                            <th class="text-center" style="width: 150px;">% Ejecución</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="item : ${resumenPresupuestal}">
-                            <td class="fw-semibold" th:text="${item.nombreActividad}">Actividad</td>
-                            <td><span class="badge bg-secondary" th:text="${item.fuente}">PROPIOS</span></td>
-                            <td class="text-end" th:text="${'$' + #numbers.formatDecimal(item.apropiacionInicial, 1, 'POINT', 0, 'COMMA')}">$0</td>
-                            <td class="text-end text-success" th:text="${'+$' + #numbers.formatDecimal(item.adiciones, 1, 'POINT', 0, 'COMMA')}">+$0</td>
-                            <td class="text-end text-warning" th:text="${'-$' + #numbers.formatDecimal(item.reducciones, 1, 'POINT', 0, 'COMMA')}">-$0</td>
-                            <td class="text-end fw-bold" th:text="${'$' + #numbers.formatDecimal(item.apropiacionDefinitiva, 1, 'POINT', 0, 'COMMA')}">$0</td>
-                            <td class="text-end text-danger fw-bold" th:text="${'$' + #numbers.formatDecimal(item.ejecutadoCompromisos, 1, 'POINT', 0, 'COMMA')}">$0</td>
-                            <td class="text-end text-success fw-bold fs-6" th:text="${'$' + #numbers.formatDecimal(item.saldoDisponible, 1, 'POINT', 0, 'COMMA')}">$0</td>
-                            <td>
-                                <div class="progress" style="height: 18px;">
-                                    <div class="progress-bar bg-info text-dark fw-bold" 
-                                        role="progressbar" 
-                                        th:style="'width: ' + ${item.porcentajeEjecucion} + '%'"
-                                        th:text="${item.porcentajeEjecucion + '%'}">0%</div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calculator text-primary me-2"></i>Estado de Ejecución Presupuestal por Actividad</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                <thead class="table-light text-center align-middle">
+                    <tr>
+                        <th rowspan="2" class="text-start">Actividad (Hito)</th>
+                        <!-- Cabecera Dinámica por cada Fuente -->
+                        <th th:each="f : ${fuentes}" colspan="2" class="fw-bold text-uppercase bg-light-subtle" th:text="${f}">FUENTE</th>
+                        <th rowspan="2" class="text-end bg-light fw-bold">Disponible Total ($)</th>
+                        <th rowspan="2" style="width: 130px;">% Ejecución</th>
+                    </tr>
+                    <tr>
+                        <!-- Subcabeceras repetidas dinámicamente -->
+                        <th:block th:each="f : ${fuentes}">
+                            <th class="text-end small">Aprop. Definitiva</th>
+                            <th class="text-end small text-success">Disponible</th>
+                        </th:block>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="item : ${resumenPresupuestal}">
+                        <td class="fw-semibold" th:text="${item.nombreActividad}">Actividad</td>
+                        
+                        <!-- Columnas Dinámicas de Valores por Fuente -->
+                        <th:block th:each="f : ${fuentes}">
+                            <td class="text-end" 
+                                th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).apropiacionDefinitiva, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td class="text-end fw-bold text-success" 
+                                th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).saldoDisponible, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                        </th:block>
+
+                        <!-- Total Consolidado -->
+                        <td class="text-end fw-bold fs-6 bg-light" 
+                            th:text="${'$' + #numbers.formatDecimal(item.disponibleTotal, 1, 'POINT', 0, 'COMMA')}">$0</td>
+
+                        <!-- Barra de Avance -->
+                        <td>
+                            <div class="progress" style="height: 18px;">
+                                <div class="progress-bar bg-info text-dark fw-bold" 
+                                     role="progressbar" 
+                                     th:style="'width: ' + ${item.porcentajeEjecucion} + '%'"
+                                     th:text="${item.porcentajeEjecucion + '%'}">0%</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
 
     <!-- Modal Registrar Movimiento -->
     <div class="modal fade" id="modalMovimiento" tabindex="-1">

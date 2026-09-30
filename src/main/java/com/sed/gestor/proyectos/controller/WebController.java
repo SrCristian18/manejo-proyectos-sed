@@ -1,6 +1,7 @@
 package com.sed.gestor.proyectos.controller;
 
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
+import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.MetaProducto;
 import com.sed.gestor.proyectos.model.Proyecto;
@@ -16,9 +17,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Controller
 public class WebController {
@@ -77,21 +76,15 @@ public class WebController {
         Proyecto proyecto = proyectoRepository.findAll().stream().findFirst().orElse(null);
 
         if (proyecto != null) {
+            List<PresupuestoResumenDTO> resumen = presupuestoService.obtenerResumenPresupuestal(proyecto.getId());
             List<Actividad> actividades = actividadRepository.findByProyectoId(proyecto.getId());
-            Map<Long, BigDecimal> saldosPropios = new HashMap<>();
-            Map<Long, BigDecimal> saldosSgp = new HashMap<>();
-
-            for (Actividad act : actividades) {
-                saldosPropios.put(act.getId(), presupuestoService.obtenerSaldoDisponible(act.getId(), FuenteFinanciacion.PROPIOS));
-                saldosSgp.put(act.getId(), presupuestoService.obtenerSaldoDisponible(act.getId(), FuenteFinanciacion.SGP));
-            }
 
             model.addAttribute("proyecto", proyecto);
+            model.addAttribute("resumenPresupuestal", resumen);
             model.addAttribute("actividades", actividades);
-            model.addAttribute("saldosPropios", saldosPropios);
-            model.addAttribute("saldosSgp", saldosSgp);
             model.addAttribute("tiposMovimiento", TipoMovimiento.values());
             model.addAttribute("fuentes", FuenteFinanciacion.values());
+
         }
 
         return "presupuesto";
