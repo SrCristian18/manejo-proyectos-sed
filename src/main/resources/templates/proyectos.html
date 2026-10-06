@@ -54,8 +54,11 @@
                             <div>
                                 <!-- Botón Editar -->
                                 <button class="btn btn-sm btn-outline-warning me-1" 
-                                        th:onclick="'abrirModalEditarActividad(' + ${act.id} + ', \'' + ${#strings.escapeJavaScript(act.nombre)} + '\', \'' + ${#strings.escapeJavaScript(act.descripcion != null ? act.descripcion : '')} + '\')'">
-                                    <i class="fa-solid fa-pen"></i>
+                                    th:data-id="${act.id}"
+                                    th:data-nombre="${act.nombre}"
+                                    th:data-descripcion="${act.descripcion}"
+                                    onclick="prepararEdicion(this)">
+                                <i class="fa-solid fa-pen"></i>
                                 </button>
                                 
                                 <!-- Botón Eliminar -->
@@ -180,6 +183,19 @@
             document.getElementById('formActividad').action = '/proyectos/' + proyectoId + '/actividad';
             new bootstrap.Modal(document.getElementById('modalActividad')).show();
         }
+
+        function prepararEdicion(btn) {
+        const id = btn.getAttribute('data-id');
+        const nombre = btn.getAttribute('data-nombre');
+        const descripcion = btn.getAttribute('data-descripcion') || '';
+
+        document.getElementById('editActividadId').value = id;
+        document.getElementById('editNombreActividad').value = nombre;
+        document.getElementById('editDescripcionActividad').value = descripcion;
+
+        new bootstrap.Modal(document.getElementById('modalEditarActividad')).show();
+    }
+
     </script>
 
     <script>
