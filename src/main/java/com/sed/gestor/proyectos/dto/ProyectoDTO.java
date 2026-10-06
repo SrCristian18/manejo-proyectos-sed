@@ -1,5 +1,7 @@
 package com.sed.gestor.proyectos.dto;
 
+import java.math.BigDecimal;
+
 public class ProyectoDTO {
     private Long id;
     private String codigoBpin;
@@ -7,6 +9,8 @@ public class ProyectoDTO {
     private String programa;
     private String politicaPublica;
     private String ejeEstrategico;
+    private BigDecimal presupuestoInicialGlobal = BigDecimal.ZERO;
+
     public Long getId() {
         return id;
     }
@@ -43,4 +47,11 @@ public class ProyectoDTO {
     public void setEjeEstrategico(String ejeEstrategico) {
         this.ejeEstrategico = ejeEstrategico;
     }
+    public BigDecimal getPresupuestoInicialGlobal() {
+        return presupuestoInicialGlobal;
+    }
+    public void setPresupuestoInicialGlobal(BigDecimal presupuestoInicialGlobal) {
+        this.presupuestoInicialGlobal = presupuestoInicialGlobal;
+    }
+    
 }

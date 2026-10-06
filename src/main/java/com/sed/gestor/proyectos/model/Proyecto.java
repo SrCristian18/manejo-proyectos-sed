@@ -1,5 +1,6 @@
 package com.sed.gestor.proyectos.model;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +37,9 @@ public class Proyecto {
 
     @Column (name = "eje_estrategico", length = 255)
     private String ejeEstrategico;
+
+    @Column (name = "presupuesto_inicial_global", precision = 15, scale = 2)
+    private BigDecimal presupuestoInicialGlobal = BigDecimal.ZERO;
 
     //nuevo
     @OneToMany (mappedBy = "proyecto", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -118,5 +122,13 @@ public class Proyecto {
 
     public void setActividades(List<Actividad> actividades) {
         this.actividades = actividades;
+    }
+
+    public BigDecimal getPresupuestoInicialGlobal() {
+        return presupuestoInicialGlobal;
+    }
+
+    public void setPresupuestoInicialGlobal(BigDecimal presupuestoInicialGlobal) {
+        this.presupuestoInicialGlobal = presupuestoInicialGlobal;
     }
 }

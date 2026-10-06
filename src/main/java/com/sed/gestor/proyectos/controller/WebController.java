@@ -155,8 +155,12 @@ public class WebController {
     @PostMapping ("/proyectos/{id}/actividad")
     public String agregarActividadProyecto(@PathVariable Long id, 
         @RequestParam String nombreActividad, 
-        @RequestParam (required = false) String descripcion){
-            proyectoService.agregarActividad(id, nombreActividad, descripcion);
+        @RequestParam (required = false) String descripcion,
+        @RequestParam (required = false) BigDecimal montoInicial,
+        @RequestParam (required = false) FuenteFinanciacion fuente){
+        
+        proyectoService.agregarActividad(id, nombreActividad, descripcion, montoInicial, fuente);
+        
         return "redirect:/proyectos";
     }
 
