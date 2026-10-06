@@ -49,6 +49,22 @@
                             <div>
                                 <i class="fa-solid fa-angle-right text-primary me-2"></i>
                                 <span class="fw-semibold" th:text="${act.nombre}">Nombre Actividad</span>
+                                <small class="text-muted ms-2" th:if="${act.descripcion != null}" th:text="${'(' + act.descripcion + ')'}"></small>
+                            </div>
+                            <div>
+                                <!-- Botón Editar -->
+                                <button class="btn btn-sm btn-outline-warning me-1" 
+                                        th:onclick="'abrirModalEditarActividad(' + ${act.id} + ', \'' + ${#strings.escapeJavaScript(act.nombre)} + '\', \'' + ${#strings.escapeJavaScript(act.descripcion != null ? act.descripcion : '')} + '\')'">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                
+                                <!-- Botón Eliminar -->
+                                <form th:action="@{'/actividades/eliminar/' + ${act.id}}" method="post" class="d-inline"
+                                    onsubmit="return confirm('¿Está seguro de eliminar esta actividad?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
                             </div>
                         </li>
                         <li class="list-group-item text-muted small" th:if="${#lists.isEmpty(p.actividades)}">
@@ -130,12 +146,51 @@
         </div>
     </div>
 
+    <!-- Modal Editar Actividad -->
+    <div class="modal fade" id="modalEditarActividad" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Editar Actividad / Hito</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="/actividades/editar">
+                    <input type="hidden" id="editActividadId" name="actividadId">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de la Actividad</label>
+                            <input type="text" id="editNombreActividad" name="nombre" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea id="editDescripcionActividad" name="descripcion" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning fw-bold">Actualizar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         function abrirModalActividad(proyectoId) {
             document.getElementById('formActividad').action = '/proyectos/' + proyectoId + '/actividad';
             new bootstrap.Modal(document.getElementById('modalActividad')).show();
         }
     </script>
+
+    <script>
+    function abrirModalEditarActividad(id, nombre, descripcion) {
+        document.getElementById('editActividadId').value = id;
+        document.getElementById('editNombreActividad').value = nombre;
+        document.getElementById('editDescripcionActividad').value = descripcion;
+        new bootstrap.Modal(document.getElementById('modalEditarActividad')).show();
+    }
+    </script>
+
 </section>
 </body>
 </html>

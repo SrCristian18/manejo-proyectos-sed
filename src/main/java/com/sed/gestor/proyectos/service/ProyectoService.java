@@ -67,4 +67,19 @@ public class ProyectoService {
         proyectoRepository.deleteById(id);
     }
 
+    @Transactional
+    public Actividad editarActividad(Long actividadId, String nuevoNombre, String nuevaDescripcion) {
+    Actividad actividad = actividadRepository.findById(actividadId)
+            .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada con ID: " + actividadId));
+    
+    actividad.setNombre(nuevoNombre);
+    actividad.setDescripcion(nuevaDescripcion);
+    return actividadRepository.save(actividad);
+    }
+
+    @Transactional
+    public void eliminarActividad(Long actividadId) {
+        actividadRepository.deleteById(actividadId);
+    }
+
 }

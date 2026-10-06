@@ -5,9 +5,23 @@
 <section>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold mb-0"><i class="fa-solid fa-wallet text-primary me-2"></i>Saldos y Distribución Presupuestal</h3>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMovimiento">
-            <i class="fa-solid fa-plus me-1"></i> Registrar Modificación / CDP
-        </button>
+                
+        <!-- Selector desplegable de Proyectos BPIN -->
+        <div class="d-flex align-items-center gap-2" style="min-width: 450px;">
+            <form method="get" class="d-flex gap-2">
+                <select name="proyectoId" class="form-select fw-bold border-primary" onchange="this.form.submit()">
+                    <option th:each="p : ${proyectos}" 
+                            th:value="${p.id}" 
+                            th:text="${'BPIN ' + p.codigoBpin + ' - ' + p.nombre}"
+                            th:selected="${p.id == proyecto.id}">
+                    </option>
+                </select>
+            </form>
+
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMovimiento">
+                <i class="fa-solid fa-plus me-1"></i> Registrar Modificación / CDP
+            </button>
+        </div>
     </div>
 
     <!-- Tabla de Actividades y Saldos -->

@@ -47,51 +47,62 @@ public class WebController {
     }
 
     @GetMapping("/")
-    public String index(@RequestParam(defaultValue = "2026") Integer vigencia, Model model) {
-        Proyecto proyecto = proyectoRepository.findAll().stream().findFirst().orElse(null);
+    public String index(@RequestParam (required = false) Long proyectoId,
+                        @RequestParam (defaultValue = "2026") Integer vigencia,
+                        Model model){
+        List<Proyecto> proyectos = proyectoRepository.findAll();
+        if (proyectos.isEmpty()) {
+            return "index";
+        }
+        
+        Proyecto proyectoSeleccionado = (proyectoId != null)
+            ? proyectoRepository.findById(proyectoId).orElse(proyectos.get(0))
+            : proyectos.get(0);
+        
+        DashboardProyectoDTO dashboard = metaService.obtenerResumenDashboard(proyectoSeleccionado.getId(), vigencia);
 
-        if (proyecto != null) {
-            DashboardProyectoDTO dashboard = metaService.obtenerResumenDashboard(proyecto.getId(), vigencia);
-            
-            // Datos presupuestales para las tarjetas del Dashboard
-            List<Actividad> actividades = actividadRepository.findByProyectoId(proyecto.getId());
-            BigDecimal totalDisponiblePropios = BigDecimal.ZERO;
-            BigDecimal totalDisponibleSgp = BigDecimal.ZERO;
+        List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
+        BigDecimal totalPropios = BigDecimal.ZERO;
+        BigDecimal totalSgp = BigDecimal.ZERO;
 
-            for (Actividad act : actividades) {
-                totalDisponiblePropios = totalDisponiblePropios.add(presupuestoService.obtenerSaldoDisponible(act.getId(), FuenteFinanciacion.PROPIOS));
-                totalDisponibleSgp = totalDisponibleSgp.add(presupuestoService.obtenerSaldoDisponible(act.getId(), FuenteFinanciacion.SGP));
-            }
-
-            model.addAttribute("proyecto", proyecto);
-            model.addAttribute("dashboard", dashboard);
-            model.addAttribute("vigencia", vigencia);
-            model.addAttribute("totalPropios", totalDisponiblePropios);
-            model.addAttribute("totalSgp", totalDisponibleSgp);
-            model.addAttribute("totalGeneral", totalDisponiblePropios.add(totalDisponibleSgp));
+        for(Actividad act : actividades){
+            totalPropios = totalPropios.add(presupuestoService.obtenerSaldoDisponible(act.getId(),FuenteFinanciacion.PROPIOS));
+            totalSgp = totalSgp.add(presupuestoService.obtenerSaldoDisponible(act.getId(), FuenteFinanciacion.SGP));
         }
 
+        model.addAttribute("proyectos", proyectos);
+        model.addAttribute("proyecto", proyectoSeleccionado);
+        model.addAttribute("dashboard", dashboard);
+        model.addAttribute("vigencia", vigencia);
+        model.addAttribute("totalPropios", totalPropios);
+        model.addAttribute("totalSgp", totalSgp);
+
         return "index";
-    }
+    }   
 
     /**
      * Vista de Seguimiento Presupuestal
      */
     @GetMapping("/presupuesto")
-    public String verPresupuesto(Model model) {
-        Proyecto proyecto = proyectoRepository.findAll().stream().findFirst().orElse(null);
-
-        if (proyecto != null) {
-            List<PresupuestoResumenDTO> resumen = presupuestoService.obtenerResumenPresupuestal(proyecto.getId());
-            List<Actividad> actividades = actividadRepository.findByProyectoId(proyecto.getId());
-
-            model.addAttribute("proyecto", proyecto);
-            model.addAttribute("resumenPresupuestal", resumen);
-            model.addAttribute("actividades", actividades);
-            model.addAttribute("tiposMovimiento", TipoMovimiento.values());
-            model.addAttribute("fuentes", FuenteFinanciacion.values());
-
+    public String verPresupuesto(@RequestParam (required = false) Long proyectoId, Model model){
+        List<Proyecto> proyectos = proyectoRepository.findAll();
+        if (proyectos.isEmpty()) {
+            return "presupuesto";
         }
+
+        Proyecto proyectoSeleccionado = (proyectoId != null)
+            ? proyectoRepository.findById(proyectoId).orElse(proyectos.get(0))
+            : proyectos.get(0);
+
+        List<PresupuestoResumenDTO> resumen = presupuestoService.obtenerResumenPresupuestal(proyectoSeleccionado.getId());
+        List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
+
+        model.addAttribute("proyectos", proyectos);
+        model.addAttribute("proyecto", proyectoSeleccionado);
+        model.addAttribute("resumenPresupuestal", resumen);
+        model.addAttribute("actividades", actividades);
+        model.addAttribute("tipoMovimiento", TipoMovimiento.values());
+        model.addAttribute("fuentes", FuenteFinanciacion.values());
 
         return "presupuesto";
     }
@@ -149,5 +160,19 @@ public class WebController {
             proyectoService.agregarActividad(id, nombreActividad, descripcion);
         return "redirect:/proyectos";
     }
+
+    @PostMapping("/actividades/editar")
+    public String editarActividad(@RequestParam Long actividadId, 
+                              @RequestParam String nombre, 
+                              @RequestParam(required = false) String descripcion) {
+    proyectoService.editarActividad(actividadId, nombre, descripcion);
+    return "redirect:/proyectos";
+}
+
+    @PostMapping("/actividades/eliminar/{id}")
+    public String eliminarActividad(@PathVariable Long id) {
+        proyectoService.eliminarActividad(id);
+    return "redirect:/proyectos";
+}
 
 }
