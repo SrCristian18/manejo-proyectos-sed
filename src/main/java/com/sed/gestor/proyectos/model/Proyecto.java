@@ -3,6 +3,8 @@ package com.sed.gestor.proyectos.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,11 +28,18 @@ public class Proyecto {
     @Column (name = "nombre", nullable = false, length = 255)
     private String nombre;
 
-    @Column (name = "programa", length = 50)
+    @Column (name = "programa", length = 100)
     private String programa;
+
+    @Column (name = "politica_publica", length = 255)
+    private String politicaPublica;
+
+    @Column (name = "eje_estrategico", length = 255)
+    private String ejeEstrategico;
 
     //nuevo
     @OneToMany (mappedBy = "proyecto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties ("proyecto")
     private List<Actividad> actividades = new ArrayList<>();
     
     public Proyecto()
@@ -38,10 +47,11 @@ public class Proyecto {
         
     }
     
-    public Proyecto(String codigoBpin, String nombre, String programa) {
+    public Proyecto(String codigoBpin, String nombre, String programa, String politicaPublica) {
         this.codigoBpin = codigoBpin;
         this.nombre = nombre;
         this.programa = programa;
+        this.politicaPublica = politicaPublica;
     }
 
     public void addActividad(Actividad actividad){
@@ -86,11 +96,27 @@ public class Proyecto {
         this.programa = programa;
     }
 
-    public List<Actividad> getActividades(){
+    public String getPoliticaPublica() {
+        return politicaPublica;
+    }
+
+    public void setPoliticaPublica(String politicaPublica) {
+        this.politicaPublica = politicaPublica;
+    }
+
+    public String getEjeEstrategico() {
+        return ejeEstrategico;
+    }
+
+    public void setEjeEstrategico(String ejeEstrategico) {
+        this.ejeEstrategico = ejeEstrategico;
+    }
+
+    public List<Actividad> getActividades() {
         return actividades;
     }
 
-    public void setActividades(List<Actividad> actividades){
-        this.actividades=actividades;
+    public void setActividades(List<Actividad> actividades) {
+        this.actividades = actividades;
     }
 }

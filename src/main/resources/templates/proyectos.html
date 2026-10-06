@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layout :: main-layout('Gestión de Proyectos y PDD', ~{::section})}">
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0"><i class="fa-solid fa-folder-plus text-primary me-2"></i>Gestión de Proyectos BPIN y Políticas Públicas</h3>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalProyecto">
+            <i class="fa-solid fa-plus me-1"></i> Nuevo Proyecto BPIN
+        </button>
+    </div>
+
+    <!-- Lista de Proyectos -->
+    <div class="row g-4">
+        <div class="col-md-12" th:each="p : ${proyectos}">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <div>
+                        <span class="badge bg-primary me-2" th:text="${'BPIN: ' + p.codigoBpin}">BPIN</span>
+                        <h5 class="fw-bold d-inline" th:text="${p.nombre}">Nombre del Proyecto</h5>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary me-1" 
+                                th:onclick="'abrirModalActividad(' + ${p.id} + ')'">
+                            <i class="fa-solid fa-list-check me-1"></i> + Actividad
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <small class="text-muted d-block text-uppercase">Política Pública Asociada</small>
+                            <span class="fw-semibold text-dark" th:text="${p.politicaPublica != null ? p.politicaPublica : 'No asignada'}">Política</span>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block text-uppercase">Programa PDD</small>
+                            <span class="fw-semibold text-dark" th:text="${p.programa != null ? p.programa : 'No asignado'}">Programa</span>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block text-uppercase">Eje Estratégico</small>
+                            <span class="fw-semibold text-dark" th:text="${p.ejeEstrategico != null ? p.ejeEstrategico : 'No asignado'}">Eje</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Actividades del Proyecto -->
+                    <h6 class="fw-bold text-muted mt-3 mb-2"><i class="fa-solid fa-tasks me-1"></i>Actividades / Hitos Registrados:</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center" th:each="act : ${p.actividades}">
+                            <div>
+                                <i class="fa-solid fa-angle-right text-primary me-2"></i>
+                                <span class="fw-semibold" th:text="${act.nombre}">Nombre Actividad</span>
+                            </div>
+                        </li>
+                        <li class="list-group-item text-muted small" th:if="${#lists.isEmpty(p.actividades)}">
+                            No hay actividades asociadas a este proyecto.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Crear Proyecto -->
+    <div class="modal fade" id="modalProyecto" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Registrar Nuevo Proyecto BPIN</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="/proyectos/guardar">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Código BPIN</label>
+                                <input type="text" name="codigoBpin" class="form-control" placeholder="Ej: 2024130010248" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Programa PDD</label>
+                                <input type="text" name="programa" class="form-control" placeholder="Ej: 02-02 Educación Cobertura">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Nombre del Proyecto</label>
+                                <input type="text" name="nombre" class="form-control" placeholder="Ej: Fortalecimiento de la infraestructura educativa..." required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Política Pública Asociada</label>
+                                <input type="text" name="politicaPublica" class="form-control" placeholder="Ej: Política Pública de Educación Inclusiva">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Eje Estratégico PDD</label>
+                                <input type="text" name="ejeEstrategico" class="form-control" placeholder="Ej: Eje 1 - Cartagena con Calidad de Vida">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Proyecto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Actividad -->
+    <div class="modal fade" id="modalActividad" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Agregar Actividad al Proyecto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formActividad" method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de la Actividad / Hito</label>
+                            <input type="text" name="nombreActividad" class="form-control" placeholder="Ej: Construcción de Aulas Nuevas" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción u Observación</label>
+                            <textarea name="descripcion" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Agregar Actividad</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function abrirModalActividad(proyectoId) {
+            document.getElementById('formActividad').action = '/proyectos/' + proyectoId + '/actividad';
+            new bootstrap.Modal(document.getElementById('modalActividad')).show();
+        }
+    </script>
+</section>
+</body>
+</html>

@@ -2,6 +2,7 @@ package com.sed.gestor.proyectos.controller;
 
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
+import com.sed.gestor.proyectos.dto.ProyectoDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.MetaProducto;
 import com.sed.gestor.proyectos.model.Proyecto;
@@ -12,6 +13,8 @@ import com.sed.gestor.proyectos.repository.MetaProductoRepository;
 import com.sed.gestor.proyectos.repository.ProyectoRepository;
 import com.sed.gestor.proyectos.service.MetaService;
 import com.sed.gestor.proyectos.service.PresupuestoService;
+import com.sed.gestor.proyectos.service.ProyectoService;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,17 +30,20 @@ public class WebController {
     private final MetaProductoRepository metaProductoRepository;
     private final PresupuestoService presupuestoService;
     private final MetaService metaService;
+    private final ProyectoService proyectoService;
 
     public WebController(ProyectoRepository proyectoRepository,
                          ActividadRepository actividadRepository,
                          MetaProductoRepository metaProductoRepository,
                          PresupuestoService presupuestoService,
-                         MetaService metaService) {
+                         MetaService metaService,
+                        ProyectoService proyectoService) {
         this.proyectoRepository = proyectoRepository;
         this.actividadRepository = actividadRepository;
         this.metaProductoRepository = metaProductoRepository;
         this.presupuestoService = presupuestoService;
         this.metaService = metaService;
+        this.proyectoService = proyectoService;
     }
 
     @GetMapping("/")
@@ -122,4 +128,26 @@ public class WebController {
         metaService.registrarAvance(metaProductoId, trimestre, vigencia, valorLogrado, observaciones);
         return "redirect:/metas?vigencia=" + vigencia;
     }
+
+    @GetMapping ("/proyectos")
+    public String listarProyecto(Model model){
+        model.addAttribute("proyectos", proyectoService.obtenerTodos());
+        model.addAttribute("nuevoProyecto", new ProyectoDTO());
+        return "proyectos";
+    }
+
+    @PostMapping ("/proyectos/guardar")
+    public String guardarProyecto(@ModelAttribute ProyectoDTO proyectoDTO){
+        proyectoService.guardarOActualizar(proyectoDTO);
+        return "redirect:/proyectos";
+    }
+
+    @PostMapping ("/proyectos/{id}/actividad")
+    public String agregarActividadProyecto(@PathVariable Long id, 
+        @RequestParam String nombreActividad, 
+        @RequestParam (required = false) String descripcion){
+            proyectoService.agregarActividad(id, nombreActividad, descripcion);
+        return "redirect:/proyectos";
+    }
+
 }

@@ -26,6 +26,9 @@ public class Actividad {
     @Column (name = "nombre", nullable = false, length = 500)
     private String nombre;
 
+    @Column (name = "descripcion", length = 1000)
+    private String descripcion;
+
     @Column (name = "fecha_inicio")
     private LocalDate fechaInicio;
 
@@ -42,8 +45,9 @@ public class Actividad {
 
     }
 
-    public Actividad(String nombre, LocalDate fechaInicio, LocalDate fechaFinal, Proyecto proyecto) {
+    public Actividad(String nombre, String descripcion, LocalDate fechaInicio, LocalDate fechaFinal, Proyecto proyecto) {
         this.nombre = nombre;
+        this.descripcion = descripcion;
         this.fechaInicio = fechaInicio;
         this.fechaFinal = fechaFinal;
         this.proyecto = proyecto;
@@ -73,6 +77,14 @@ public class Actividad {
         this.nombre = nombre;
     }
 
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
     public LocalDate getFechaInicio() {
         return fechaInicio;
     }
@@ -88,5 +100,4 @@ public class Actividad {
     public void setFechaFinal(LocalDate fechaFinal) {
         this.fechaFinal = fechaFinal;
     }
-
 }
