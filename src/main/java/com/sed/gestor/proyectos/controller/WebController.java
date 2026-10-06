@@ -86,24 +86,23 @@ public class WebController {
     @GetMapping("/presupuesto")
     public String verPresupuesto(@RequestParam (required = false) Long proyectoId, Model model){
         List<Proyecto> proyectos = proyectoRepository.findAll();
-        if (proyectos.isEmpty()) {
-            return "presupuesto";
-        }
 
-        Proyecto proyectoSeleccionado = (proyectoId != null)
+        model.addAttribute("tiposMovimiento", TipoMovimiento.values());
+        model.addAttribute("fuentes", FuenteFinanciacion.values());
+        model.addAttribute("proyectos", proyectos);
+
+        if (!proyectos.isEmpty()) {
+            Proyecto proyectoSeleccionado = (proyectoId != null)
             ? proyectoRepository.findById(proyectoId).orElse(proyectos.get(0))
             : proyectos.get(0);
-
+        
         List<PresupuestoResumenDTO> resumen = presupuestoService.obtenerResumenPresupuestal(proyectoSeleccionado.getId());
         List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
 
-        model.addAttribute("proyectos", proyectos);
-        model.addAttribute("proyecto", proyectoSeleccionado);
-        model.addAttribute("resumenPresupuestal", resumen);
-        model.addAttribute("actividades", actividades);
-        model.addAttribute("tipoMovimiento", TipoMovimiento.values());
-        model.addAttribute("fuentes", FuenteFinanciacion.values());
-
+            model.addAttribute("proyecto", proyectoSeleccionado);
+            model.addAttribute("resumenPresupuestal", resumen);
+            model.addAttribute("actividades", actividades);
+        }
         return "presupuesto";
     }
 
