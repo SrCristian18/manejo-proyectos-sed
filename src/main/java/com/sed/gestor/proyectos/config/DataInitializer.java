@@ -36,11 +36,11 @@ public class DataInitializer {
             proyecto.setPrograma("MODERNIZACIÓN DE LA INFRAESTRUCTURA EDUCATIVA");
 
             //Crear las actividades
-            Actividad act1 = new Actividad("Mejorar y/o adecuar sedes educativas", null, null, proyecto);
-            Actividad act2 = new Actividad("Gastos de viajes y tiquetes", null, null, proyecto);
-            Actividad act3 = new Actividad("Dotación de Mobiliario Escolar", null, null, proyecto);
-            Actividad act4 = new Actividad("Legalización de predios", null, null, proyecto);
-            Actividad act5 = new Actividad("Elaborar Plan Maestro de Infraestructura Educativa", null, null, proyecto);
+            Actividad act1 = new Actividad("Mejorar y/o adecuar sedes educativas", null,null, null, proyecto);
+            Actividad act2 = new Actividad("Gastos de viajes y tiquetes", null,null, null, proyecto);
+            Actividad act3 = new Actividad("Dotación de Mobiliario Escolar", null, null, null, proyecto);
+            Actividad act4 = new Actividad("Legalización de predios", null, null, null, proyecto);
+            Actividad act5 = new Actividad("Elaborar Plan Maestro de Infraestructura Educativa", null, null, null, proyecto);
 
             proyecto.addActividad(act1);
             proyecto.addActividad(act2);
