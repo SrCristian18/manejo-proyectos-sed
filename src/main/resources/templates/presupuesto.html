@@ -18,9 +18,9 @@
                 </select>
             </form>
 
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMovimiento">
-                <i class="fa-solid fa-plus me-1"></i> Registrar Modificación / CDP
-            </button>
+        <button class="btn btn-warning text-dark fw-bold text-nowrap" data-bs-toggle="modal" data-bs-target="#modalActualizarProyecto">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Actualizar Proyecto (Ajuste de Costos)
+        </button>
         </div>
     </div>
 
@@ -151,6 +151,155 @@
         </div>
     </div>
 </div>
+<!-- Modal Actualizar Proyecto (Ajuste de Costos) -->
+<div class="modal fade" id="modalActualizarProyecto" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-warning-subtle">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="fa-solid fa-sliders me-2"></i>Actualización de Proyecto - Redistribución y Ajuste de Costos
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formActualizarProyecto">
+                <div class="modal-body">
+                    <input type="hidden" id="proyectoIdActualizar" th:value="${proyecto != null ? proyecto.id : ''}">
+
+                    <!-- Acto Administrativo de Soporte -->
+                    <div class="row g-3 mb-4 bg-light p-3 rounded">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Número de Decreto / Acto Administrativo</label>
+                            <input type="text" id="decretoActualizacion" class="form-control" placeholder="Ej: Decreto No. 0131 de 14 de Abril de 2026" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Justificación / Observación</label>
+                            <input type="text" id="justificacionActualizacion" class="form-control" placeholder="Ej: Redistribución de costos entre actividades de la vigencia">
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Ajuste de Costos por Actividad -->
+                    <h6 class="fw-bold mb-3"><i class="fa-solid fa-table me-2"></i>Ajuste de Costos por Actividad</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle" style="font-size: 0.88rem;">
+                            <thead class="table-dark text-center">
+                                <tr>
+                                    <th>Actividad</th>
+                                    <th>Fuente</th>
+                                    <th style="width: 180px;">Costo Inicial ($)</th>
+                                    <th style="width: 200px;">Costo Ajustado ($)</th>
+                                    <th style="width: 180px;">Cambio en el Costo ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="act, stat : ${actividades}">
+                                    <td class="fw-semibold" th:text="${act.nombre}">Actividad</td>
+                                    <td>
+                                        <select class="form-select form-select-sm fuente-ajuste" th:data-index="${stat.index}">
+                                            <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}" 
+                                                    th:selected="${act.fuente != null and act.fuente == f}"></option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm text-end bg-light costo-inicial" 
+                                               th:value="${#numbers.formatDecimal(act.presupuestoInicial, 1, 'POINT', 0, 'COMMA')}" readonly 
+                                               th:data-actividad-id="${act.id}"
+                                               th:data-raw-inicial="${act.presupuestoInicial}">
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" class="form-control form-control-sm text-end fw-bold costo-ajustado" 
+                                               th:value="${act.presupuestoInicial}" 
+                                               th:data-index="${stat.index}"
+                                               oninput="calcularVariacionCosto(this)">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm text-end fw-bold bg-light cambio-costo" 
+                                               value="$0" readonly th:id="'cambioCosto_' + ${stat.index}">
+                                    </td>
+                                </tr>
+                                <tr th:if="${actividades == null or actividades.isEmpty()}">
+                                    <td colspan="5" class="text-center text-muted py-3">No hay actividades para ajustar en este proyecto.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning fw-bold" onclick="enviarActualizacionCostos()">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Actualización
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calcularVariacionCosto(input) {
+        const index = input.getAttribute('data-index');
+        const fila = input.closest('tr');
+        const inicial = parseFloat(fila.querySelector('.costo-inicial').getAttribute('data-raw-inicial')) || 0;
+        const ajustado = parseFloat(input.value) || 0;
+        const variacion = ajustado - inicial;
+
+        const inputCambio = document.getElementById('cambioCosto_' + index);
+        inputCambio.value = (variacion >= 0 ? '+$' : '-$') + Math.abs(variacion).toLocaleString('es-CO');
+        inputCambio.className = 'form-control form-control-sm text-end fw-bold ' + (variacion >= 0 ? 'text-success' : 'text-danger');
+    }
+
+    function enviarActualizacionCostos() {
+        const proyectoId = document.getElementById('proyectoIdActualizar').value;
+        const numeroDecreto = document.getElementById('decretoActualizacion').value;
+        const justificacion = document.getElementById('justificacionActualizacion').value;
+
+        if (!numeroDecreto) {
+            alert("Por favor ingrese el número de decreto o acto administrativo de soporte.");
+            return;
+        }
+
+        const ajustes = [];
+        const filas = document.querySelectorAll('#modalActualizarProyecto tbody tr');
+
+        filas.forEach(f => {
+            const inputInicial = f.querySelector('.costo-inicial');
+            if (!inputInicial) return;
+
+            const actividadId = inputInicial.getAttribute('data-actividad-id');
+            const costoInicial = parseFloat(inputInicial.getAttribute('data-raw-inicial')) || 0;
+            const fuente = f.querySelector('.fuente-ajuste').value;
+            const costoAjustado = parseFloat(f.querySelector('.costo-ajustado').value) || 0;
+
+            ajustes.push({
+                actividadId: actividadId,
+                fuente: fuente,
+                costoInicial: costoInicial,
+                costoAjustado: costoAjustado
+            });
+        });
+
+        const body = {
+            proyectoId: proyectoId,
+            numeroDecreto: numeroDecreto,
+            justificacion: justificacion,
+            ajustes: ajustes
+        };
+
+        fetch('/api/proyecto/actualizar-costos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+        .then(res => {
+            if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje); });
+            return res.json();
+        })
+        .then(data => {
+            alert(data.mensaje);
+            location.reload();
+        })
+        .catch(err => alert("Error: " + err.message));
+    }
+</script>
 
     <script>
         function enviarMovimiento() {

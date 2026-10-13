@@ -3,6 +3,7 @@ package com.sed.gestor.proyectos.controller;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
 import com.sed.gestor.proyectos.dto.ProyectoDTO;
+import com.sed.gestor.proyectos.dto.SolicitudActualizacionDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.MetaProducto;
 import com.sed.gestor.proyectos.model.Proyecto;
@@ -17,6 +18,7 @@ import com.sed.gestor.proyectos.service.MetaService;
 import com.sed.gestor.proyectos.service.PresupuestoService;
 import com.sed.gestor.proyectos.service.ProyectoService;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -174,6 +176,17 @@ public class WebController {
         model.addAttribute("nuevoProyecto", new ProyectoDTO());
 
         return "proyectos";
+    }
+
+    @PostMapping ("/api/proyecto/actualizar-costos")
+    @ResponseBody
+    public ResponseEntity<?> actualizarCostosProyecto(@RequestBody SolicitudActualizacionDTO solicitud){
+    try {
+        presupuestoService.procesarActualizacionProyecto(solicitud);
+        return ResponseEntity.ok().body("{\"mensaje\": \"Actualización de costos procesada exitosamente\"}");
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body("{\"mensaje\": \"" + e.getMessage() + "\"}");
+        }
     }
 
     @PostMapping ("/proyectos/guardar")

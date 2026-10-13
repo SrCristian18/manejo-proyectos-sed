@@ -9,29 +9,35 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sed.gestor.proyectos.dto.AjusteCostoDTO;
 import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
+import com.sed.gestor.proyectos.dto.SolicitudActualizacionDTO;
 import com.sed.gestor.proyectos.exception.PresupuestoInsuficienteException;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.DetalleMovimiento;
 import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
+import com.sed.gestor.proyectos.model.Proyecto;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
 import com.sed.gestor.proyectos.repository.ActividadRepository;
 import com.sed.gestor.proyectos.repository.DetalleMovimientoRepository;
 import com.sed.gestor.proyectos.repository.MovimientoPresupuestalRepository;
+import com.sed.gestor.proyectos.repository.ProyectoRepository;
 
 @Service
 public class PresupuestoService {
     private final MovimientoPresupuestalRepository movimientoRepository;
     private final DetalleMovimientoRepository detalleRepository;
     private final ActividadRepository actividadRepository;
+    private final ProyectoRepository proyectoRepository;
 
     public PresupuestoService(MovimientoPresupuestalRepository movimientoRepository,
-        DetalleMovimientoRepository detalleRepository, ActividadRepository actividadRepository) {
+        DetalleMovimientoRepository detalleRepository, ActividadRepository actividadRepository, ProyectoRepository proyectoRepository) {
             this.movimientoRepository = movimientoRepository;
             this.detalleRepository = detalleRepository;
             this.actividadRepository = actividadRepository;
+            this.proyectoRepository = proyectoRepository;
         }
     
     @Transactional(readOnly = true)
@@ -113,5 +119,39 @@ public class PresupuestoService {
             listaResumen.add(dto);
         }
         return listaResumen;
+    }
+
+    @Transactional
+    public void procesarActualizacionProyecto(SolicitudActualizacionDTO solicitud){
+        Proyecto proyecto = proyectoRepository.findById(solicitud.getProyectoId())
+            .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado"));
+        
+        MovimientoPresupuestal movimiento = new MovimientoPresupuestal();
+        movimiento.setProyecto(proyecto);
+        movimiento.setTipoMovimiento(TipoMovimiento.ADICION_CREDITO);
+        movimiento.setNumeroDecreto(solicitud.getNumeroDecreto());
+
+        for (AjusteCostoDTO ajuste : solicitud.getAjustes()){
+            Actividad actividad = actividadRepository.findById(ajuste.getActividadId())
+                .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
+
+            BigDecimal variacion = ajuste.getCambioEnCosto();
+
+            if (variacion.compareTo(BigDecimal.ZERO) != 0) {
+                DetalleMovimiento detalle = new DetalleMovimiento();
+                detalle.setActividad(actividad);
+                detalle.setFuente(ajuste.getFuente() != null ? ajuste.getFuente() : FuenteFinanciacion.LIBRE_DESTINACION);
+                detalle.setMonto(variacion);
+                movimiento.addDetalle(detalle);
+
+                // Reajustamos la apropiación de la actividad
+                BigDecimal nuevaApropiacion = actividad.getPresupuestoInicial().add(variacion);
+                actividad.setPresupuestoInicial(nuevaApropiacion);
+                actividadRepository.save(actividad);
+            }
+        }
+        if (!movimiento.getDetalles().isEmpty()) {
+            registrarMovimiento(movimiento);
+        }
     }
 }
