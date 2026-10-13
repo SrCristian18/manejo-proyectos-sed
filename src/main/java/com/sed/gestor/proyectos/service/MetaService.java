@@ -48,45 +48,70 @@ public class MetaService {
         return avanceRepository.save(avance);
     }
 
+    @Transactional 
+    public MetaProducto crearMeta(Long proyectoId, String tipoMeta, String codigoPrograma, String descripcion, String unidadMedida, BigDecimal programadoAnual){
+        Proyecto proyecto = proyectoRepository.findById(proyectoId)
+            .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado"));
+
+        MetaProducto meta = new MetaProducto();
+        meta.setProyecto(proyecto);
+        meta.setTipoMeta(tipoMeta);
+        meta.setCodigoPrograma(codigoPrograma);
+        meta.setDescripcion(descripcion);
+        meta.setUnidadMedida(unidadMedida);
+        meta.setProgramadoAnual(programadoAnual);
+
+        return metaRepository.save(meta);
+    }
+
+    //ajustar
     @Transactional(readOnly = true)
     public DashboardProyectoDTO obtenerResumenDashboard(Long proyectoId, Integer vigencia) {
         Proyecto proyecto = proyectoRepository.findById(proyectoId)
                 .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado"));
 
-        List<MetaProducto> metas = metaRepository.findByActividadProyectoId(proyectoId);
+        List<MetaProducto> metas = metaRepository.findByProyectoId(proyectoId);
         List<MetaAvanceDTO> resumenMetas = new ArrayList<>();
         BigDecimal sumaPorcentajes = BigDecimal.ZERO;
 
         for (MetaProducto meta : metas) {
-            BigDecimal logrado = metaRepository.calcularAcumuladoFisicoMeta(meta.getId(), vigencia);
-            BigDecimal programado = meta.getProgramacionVigencia();
+            BigDecimal logrado = meta.getAvances().stream()
+                .filter(a -> a.getVigencia() != null && a.getVigencia().equals(vigencia))
+                .map(a -> a.getValorLogrado() != null ? a.getValorLogrado() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
             
+            BigDecimal programado = meta.getProgramadoAnual() != null ? meta.getProgramadoAnual() : BigDecimal.ZERO;
+                        
             BigDecimal porcentaje = BigDecimal.ZERO;
-            if (programado != null && programado.compareTo(BigDecimal.ZERO) > 0) {
+            if (programado.compareTo(BigDecimal.ZERO) > 0) {
                 porcentaje = logrado.multiply(new BigDecimal("100")).divide(programado, 2, RoundingMode.HALF_UP);
             }
 
             sumaPorcentajes = sumaPorcentajes.add(porcentaje);
+
+            String textoDescripcion = (meta.getCodigoPrograma() != null && !meta.getCodigoPrograma().isBlank())
+                ? "[" + meta.getCodigoPrograma() + "]" + meta.getDescripcion()
+                : meta.getDescripcion();
+
             resumenMetas.add(new MetaAvanceDTO(
-                    meta.getDescripcionMeta(),
-                    meta.getUnidadMedida(),
-                    programado,
-                    logrado,
-                    porcentaje
+                textoDescripcion,
+                meta.getUnidadMedida(),
+                programado,
+                logrado,
+                porcentaje
             ));
         }
 
-        BigDecimal avancePromedio = BigDecimal.ZERO;
+        BigDecimal promedioAvance = BigDecimal.ZERO;
         if (!metas.isEmpty()) {
-            avancePromedio = sumaPorcentajes.divide(new BigDecimal(metas.size()), 2, RoundingMode.HALF_UP);
+            promedioAvance = sumaPorcentajes.divide(new BigDecimal(metas.size()), 2, RoundingMode.HALF_UP);
         }
 
-        DashboardProyectoDTO dto = new DashboardProyectoDTO();
-        dto.setCodigoBpin(proyecto.getCodigoBpin());
-        dto.setNombreProyecto(proyecto.getNombre());
-        dto.setPorcentajeAvanceFisicoPromedio(avancePromedio);
-        dto.setResumenMetas(resumenMetas);
-
-        return dto;
+        return new DashboardProyectoDTO(
+            proyecto.getNombre(),
+            proyecto.getCodigoBpin(),
+            promedioAvance,
+            resumenMetas
+        );
     }
 }

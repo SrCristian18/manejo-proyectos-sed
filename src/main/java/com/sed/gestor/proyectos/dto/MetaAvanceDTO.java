@@ -5,20 +5,20 @@ import java.math.BigDecimal;
 public class MetaAvanceDTO {
     private String descripcionMeta;
     private String unidadMedida;
-    private BigDecimal metaProgramadaVigencia;
-    private BigDecimal acumuladoFisicoLogrado;
+    private BigDecimal programadoVigencia;
+    private BigDecimal logradoVigencia;
     private BigDecimal porcentajeAvanceSimple;
 
     public MetaAvanceDTO(){
 
     }
 
-    public MetaAvanceDTO(String descripcionMeta, String unidadMedida, BigDecimal metaProgramadaVigencia,
-            BigDecimal acumuladoFisicoLogrado, BigDecimal porcentajeAvanceSimple) {
+    public MetaAvanceDTO(String descripcionMeta, String unidadMedida, BigDecimal programadoVigencia,
+            BigDecimal logradoVigencia, BigDecimal porcentajeAvanceSimple) {
         this.descripcionMeta = descripcionMeta;
         this.unidadMedida = unidadMedida;
-        this.metaProgramadaVigencia = metaProgramadaVigencia;
-        this.acumuladoFisicoLogrado = acumuladoFisicoLogrado;
+        this.programadoVigencia = programadoVigencia;
+        this.logradoVigencia = logradoVigencia;
         this.porcentajeAvanceSimple = porcentajeAvanceSimple;
     }
 
@@ -38,20 +38,20 @@ public class MetaAvanceDTO {
         this.unidadMedida = unidadMedida;
     }
 
-    public BigDecimal getMetaProgramadaVigencia() {
-        return metaProgramadaVigencia;
+    public BigDecimal getProgramadoVigencia() {
+        return programadoVigencia;
     }
 
-    public void setMetaProgramadaVigencia(BigDecimal metaProgramadaVigencia) {
-        this.metaProgramadaVigencia = metaProgramadaVigencia;
+    public void setProgramadoVigencia(BigDecimal programadoVigencia) {
+        this.programadoVigencia = programadoVigencia;
     }
 
-    public BigDecimal getAcumuladoFisicoLogrado() {
-        return acumuladoFisicoLogrado;
+    public BigDecimal getLogradoVigencia() {
+        return logradoVigencia;
     }
 
-    public void setAcumuladoFisicoLogrado(BigDecimal acumuladoFisicoLogrado) {
-        this.acumuladoFisicoLogrado = acumuladoFisicoLogrado;
+    public void setLogradoVigencia(BigDecimal logradoVigencia) {
+        this.logradoVigencia = logradoVigencia;
     }
 
     public BigDecimal getPorcentajeAvanceSimple() {
@@ -61,4 +61,5 @@ public class MetaAvanceDTO {
     public void setPorcentajeAvanceSimple(BigDecimal porcentajeAvanceSimple) {
         this.porcentajeAvanceSimple = porcentajeAvanceSimple;
     }
+
 }

@@ -123,7 +123,7 @@ public class WebController {
         Proyecto proyecto = proyectoRepository.findAll().stream().findFirst().orElse(null);
 
         if (proyecto != null) {
-            List<MetaProducto> metas = metaProductoRepository.findByActividadProyectoId(proyecto.getId());
+            List<MetaProducto> metas = metaProductoRepository.findByProyectoId(proyecto.getId());
             DashboardProyectoDTO resumen = metaService.obtenerResumenDashboard(proyecto.getId(), vigencia);
 
             model.addAttribute("proyecto", proyecto);
@@ -134,6 +134,18 @@ public class WebController {
 
         return "metas";
     }
+
+    @PostMapping ("/metas/crear")
+    public String crearMeta(@RequestParam Long proyectoId,
+        @RequestParam String tipoMeta,
+        @RequestParam (required = false) String codigoPrograma,
+        @RequestParam String descripcion,
+        @RequestParam String unidadMedida,
+        @RequestParam BigDecimal programadoAnual){
+
+            metaService.crearMeta(proyectoId, tipoMeta, codigoPrograma, descripcion, unidadMedida, programadoAnual);
+            return "redirect:/metas?proyectoId=" + proyectoId;
+        }
 
     /**
      * Procesar Formulario Web de Avance de Metas
