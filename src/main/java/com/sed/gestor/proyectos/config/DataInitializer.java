@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.DetalleMovimiento;
-import com.sed.gestor.proyectos.model.MetaProducto;
 import com.sed.gestor.proyectos.service.MetaService;
 import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
 import com.sed.gestor.proyectos.model.Proyecto;
@@ -33,9 +32,9 @@ public class DataInitializer {
             Proyecto proyecto = new Proyecto();
             proyecto.setCodigoBpin("2024130010248");
             proyecto.setNombre("Modernización de la Infraestructura Educativa");
-            proyecto.setPrograma("MODERNIZACIÓN DE LA INFRAESTRUCTURA EDUCATIVA");
 
             //Crear las actividades
+/*
             Actividad act1 = new Actividad("Mejorar y/o adecuar sedes educativas", null,null, null, proyecto);
             Actividad act2 = new Actividad("Gastos de viajes y tiquetes", null,null, null, proyecto);
             Actividad act3 = new Actividad("Dotación de Mobiliario Escolar", null, null, null, proyecto);
@@ -47,7 +46,7 @@ public class DataInitializer {
             proyecto.addActividad(act3);
             proyecto.addActividad(act4);
             proyecto.addActividad(act5);
-
+*/
             Proyecto proyectoGuardado = proyectoRepository.save(proyecto);
 
             // 3. Simular el primer evento: "Apropiación Inicial según Decreto No.1969"
@@ -59,6 +58,7 @@ public class DataInitializer {
             inicial.setObservaciones("Apropiación Inicial asignada por decreto");
 
             // Valores reales del Excel
+        /*    
             inicial.addDetalle(crearDetalle(act1, FuenteFinanciacion.PROPIOS, new BigDecimal("14292276751")));
             inicial.addDetalle(crearDetalle(act1, FuenteFinanciacion.SGP, new BigDecimal("4933693576")));
             inicial.addDetalle(crearDetalle(act2, FuenteFinanciacion.PROPIOS, new BigDecimal("50000000")));
@@ -96,8 +96,9 @@ public class DataInitializer {
 
             // Agregar avance de prueba
             metaService.registrarAvance(meta1.getId(), 1, 2026, new BigDecimal("5"), "Concluidas 5 sedes en Q1");// Dentro del método initDatabase en DataInitializer.java (después de guardar la Apropiación Inicial):
-
+        */
         };
+        
     }
 
     private DetalleMovimiento crearDetalle(Actividad actividad, FuenteFinanciacion fuente, BigDecimal monto){

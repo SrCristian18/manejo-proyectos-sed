@@ -1,6 +1,5 @@
 package com.sed.gestor.proyectos.model;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,19 +28,15 @@ public class Proyecto {
     @Column (name = "nombre", nullable = false, length = 255)
     private String nombre;
 
-    @Column (name = "programa", length = 100)
-    private String programa;
+    @Column (name = "meta_resultado", length = 500) //publica
+    private String metaResultado;
 
-    @Column (name = "politica_publica", length = 255)
-    private String politicaPublica;
+    @Column (name = "meta_producto", length = 500) //distrital
+    private String metaProducto;
 
-    @Column (name = "eje_estrategico", length = 255)
-    private String ejeEstrategico;
+    @Column (name = "vigencia", nullable = false)
+    private Integer vigencia;
 
-    @Column (name = "presupuesto_inicial_global", precision = 15, scale = 2)
-    private BigDecimal presupuestoInicialGlobal = BigDecimal.ZERO;
-
-    //nuevo
     @OneToMany (mappedBy = "proyecto", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties ("proyecto")
     private List<Actividad> actividades = new ArrayList<>();
@@ -50,12 +45,13 @@ public class Proyecto {
     {
         
     }
-    
-    public Proyecto(String codigoBpin, String nombre, String programa, String politicaPublica) {
+
+    public Proyecto(String codigoBpin, String nombre, String metaResultado, String metaProducto, Integer vigencia) {
         this.codigoBpin = codigoBpin;
         this.nombre = nombre;
-        this.programa = programa;
-        this.politicaPublica = politicaPublica;
+        this.metaResultado = metaResultado;
+        this.metaProducto = metaProducto;
+        this.vigencia = vigencia;
     }
 
     public void addActividad(Actividad actividad){
@@ -92,28 +88,28 @@ public class Proyecto {
         this.nombre = nombre;
     }
 
-    public String getPrograma() {
-        return programa;
+    public String getMetaResultado() {
+        return metaResultado;
     }
 
-    public void setPrograma(String programa) {
-        this.programa = programa;
+    public void setMetaResultado(String metaResultado) {
+        this.metaResultado = metaResultado;
     }
 
-    public String getPoliticaPublica() {
-        return politicaPublica;
+    public String getMetaProducto() {
+        return metaProducto;
     }
 
-    public void setPoliticaPublica(String politicaPublica) {
-        this.politicaPublica = politicaPublica;
+    public void setMetaProducto(String metaProducto) {
+        this.metaProducto = metaProducto;
     }
 
-    public String getEjeEstrategico() {
-        return ejeEstrategico;
+    public Integer getVigencia() {
+        return vigencia;
     }
 
-    public void setEjeEstrategico(String ejeEstrategico) {
-        this.ejeEstrategico = ejeEstrategico;
+    public void setVigencia(Integer vigencia) {
+        this.vigencia = vigencia;
     }
 
     public List<Actividad> getActividades() {
@@ -122,13 +118,5 @@ public class Proyecto {
 
     public void setActividades(List<Actividad> actividades) {
         this.actividades = actividades;
-    }
-
-    public BigDecimal getPresupuestoInicialGlobal() {
-        return presupuestoInicialGlobal;
-    }
-
-    public void setPresupuestoInicialGlobal(BigDecimal presupuestoInicialGlobal) {
-        this.presupuestoInicialGlobal = presupuestoInicialGlobal;
     }
 }

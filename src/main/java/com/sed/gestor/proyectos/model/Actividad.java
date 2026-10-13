@@ -1,11 +1,14 @@
 package com.sed.gestor.proyectos.model;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,14 +29,15 @@ public class Actividad {
     @Column (name = "nombre", nullable = false, length = 500)
     private String nombre;
 
+    @Column (name = "presupuesto_inicial", precision = 15, scale = 2)
+    private BigDecimal presupuestoInicial = BigDecimal.ZERO;
+
+    @Enumerated (EnumType.STRING)
+    @Column (name = "fuente", length = 50)
+    private FuenteFinanciacion fuente;
+
     @Column (name = "descripcion", length = 1000)
     private String descripcion;
-
-    @Column (name = "fecha_inicio")
-    private LocalDate fechaInicio;
-
-    @Column (name = "fecha_final")
-    private LocalDate fechaFinal;
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "proyecto_id", nullable = false)
@@ -45,28 +49,12 @@ public class Actividad {
 
     }
 
-    public Actividad(String nombre, String descripcion, LocalDate fechaInicio, LocalDate fechaFinal, Proyecto proyecto) {
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.fechaInicio = fechaInicio;
-        this.fechaFinal = fechaFinal;
-        this.proyecto = proyecto;
-    }
-
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Proyecto getProyecto() {
-        return proyecto;
-    }
-
-    public void setProyecto(Proyecto proyecto) {
-        this.proyecto = proyecto;
     }
 
     public String getNombre() {
@@ -77,6 +65,22 @@ public class Actividad {
         this.nombre = nombre;
     }
 
+    public BigDecimal getPresupuestoInicial() {
+        return presupuestoInicial;
+    }
+
+    public void setPresupuestoInicial(BigDecimal presupuestoInicial) {
+        this.presupuestoInicial = presupuestoInicial;
+    }
+
+    public FuenteFinanciacion getFuente() {
+        return fuente;
+    }
+
+    public void setFuente(FuenteFinanciacion fuente) {
+        this.fuente = fuente;
+    }
+
     public String getDescripcion() {
         return descripcion;
     }
@@ -85,19 +89,12 @@ public class Actividad {
         this.descripcion = descripcion;
     }
 
-    public LocalDate getFechaInicio() {
-        return fechaInicio;
+    public Proyecto getProyecto() {
+        return proyecto;
     }
 
-    public void setFechaInicio(LocalDate fechaInicio) {
-        this.fechaInicio = fechaInicio;
+    public void setProyecto(Proyecto proyecto) {
+        this.proyecto = proyecto;
     }
 
-    public LocalDate getFechaFinal() {
-        return fechaFinal;
-    }
-
-    public void setFechaFinal(LocalDate fechaFinal) {
-        this.fechaFinal = fechaFinal;
-    }
 }

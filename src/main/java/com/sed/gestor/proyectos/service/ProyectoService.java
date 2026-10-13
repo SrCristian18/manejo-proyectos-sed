@@ -8,11 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sed.gestor.proyectos.dto.ProyectoDTO;
 import com.sed.gestor.proyectos.model.Actividad;
-import com.sed.gestor.proyectos.model.DetalleMovimiento;
-import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
 import com.sed.gestor.proyectos.model.Proyecto;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
-import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
 import com.sed.gestor.proyectos.repository.ActividadRepository;
 import com.sed.gestor.proyectos.repository.ProyectoRepository;
 
@@ -28,12 +25,19 @@ public class ProyectoService {
         this.presupuestoService = presupuestoService;
     }
 
+    /*
     @Transactional (readOnly = true)
     public List<Proyecto> obtenerTodos(){
         return proyectoRepository.findAll();
     }
+    */
+    
+    @Transactional (readOnly = true)
+    public List<Proyecto> obtenerPorVigencia(Integer vigencia){
+        return proyectoRepository.findByVigencia(vigencia);
+    }
 
-    @Transactional 
+    @Transactional (readOnly = true)
     public Proyecto obtenerPorId(Long id){
         return proyectoRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado con ID: " + id));
@@ -46,58 +50,38 @@ public class ProyectoService {
 
         proyecto.setCodigoBpin(dto.getCodigoBpin());
         proyecto.setNombre(dto.getNombre());
-        proyecto.setPrograma(dto.getPrograma());
-        proyecto.setPoliticaPublica(dto.getPoliticaPublica());
-        proyecto.setEjeEstrategico(dto.getEjeEstrategico());
-        proyecto.setPresupuestoInicialGlobal(dto.getPresupuestoInicialGlobal());
+        proyecto.setMetaResultado(dto.getMetaResultado());
+        proyecto.setMetaProducto(dto.getMetaProducto());
+        proyecto.setVigencia(dto.getVigencia());
 
         return proyectoRepository.save(proyecto);
     }
 
     @Transactional
-    public Actividad agregarActividad(Long proyectoId, String nombreActividad, String descripcion, BigDecimal montoInicial, FuenteFinanciacion fuente) {
+    public Actividad agregarActividad(Long proyectoId, String nombre, BigDecimal presupuestoInicial, FuenteFinanciacion fuente, String descripcion) {
         Proyecto proyecto = obtenerPorId(proyectoId);
 
         Actividad actividad = new Actividad();
-        actividad.setNombre(nombreActividad);
+        actividad.setNombre(nombre);
+        actividad.setPresupuestoInicial(presupuestoInicial);
+        actividad.setFuente(fuente);
         actividad.setDescripcion(descripcion);
         proyecto.addActividad(actividad);
 
-        Actividad guardada = actividadRepository.save(actividad);
-
-        // Si se especificó un presupuesto inicial para la actividad, creamos automáticamente el Movimiento de APROPIACIÓN INICIAL
-        if(montoInicial != null && montoInicial.compareTo(BigDecimal.ZERO)>0){
-            MovimientoPresupuestal movimientoInicial = new MovimientoPresupuestal();
-            movimientoInicial.setProyecto(proyecto);;
-            movimientoInicial.setTipoMovimiento(TipoMovimiento.APROPIACION_INICIAL);
-            movimientoInicial.setNumeroDecreto("Apropiación Inicial Planificada");
-
-            DetalleMovimiento detalle = new DetalleMovimiento();
-            detalle.setActividad(guardada);
-            detalle.setFuente(fuente != null ? fuente : FuenteFinanciacion.PROPIOS);
-            detalle.setMonto(montoInicial);
-
-            movimientoInicial.addDetalle(detalle);
-            presupuestoService.registrarMovimiento(movimientoInicial);
-
-        }
-        return guardada;
-
+        return actividadRepository.save(actividad);
     }
 
     @Transactional
-    public void eliminarProyecto(Long id) {
-        proyectoRepository.deleteById(id);
-    }
-
-    @Transactional
-    public Actividad editarActividad(Long actividadId, String nuevoNombre, String nuevaDescripcion) {
-    Actividad actividad = actividadRepository.findById(actividadId)
+    public Actividad editarActividad(Long actividadId, String nombre, BigDecimal presupuestoInicial, FuenteFinanciacion fuente, String descripcion){
+        Actividad actividad = actividadRepository.findById(actividadId)
             .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada con ID: " + actividadId));
-    
-    actividad.setNombre(nuevoNombre);
-    actividad.setDescripcion(nuevaDescripcion);
-    return actividadRepository.save(actividad);
+
+        actividad.setNombre(nombre);
+        actividad.setPresupuestoInicial(presupuestoInicial);
+        actividad.setFuente(fuente);
+        actividad.setDescripcion(descripcion);
+
+        return actividadRepository.save(actividad);
     }
 
     @Transactional
@@ -105,4 +89,8 @@ public class ProyectoService {
         actividadRepository.deleteById(actividadId);
     }
 
+    @Transactional
+    public void eliminarProyecto(Long id) {
+        proyectoRepository.deleteById(id);
+    }
 }

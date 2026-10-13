@@ -20,6 +20,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -51,14 +52,15 @@ public class WebController {
                         @RequestParam (defaultValue = "2026") Integer vigencia,
                         Model model){
         List<Proyecto> proyectos = proyectoRepository.findAll();
-        if (proyectos.isEmpty()) {
-            return "index";
-        }
-        
-        Proyecto proyectoSeleccionado = (proyectoId != null)
-            ? proyectoRepository.findById(proyectoId).orElse(proyectos.get(0))
-            : proyectos.get(0);
-        
+
+        model.addAttribute("vigencia", vigencia);
+        model.addAttribute("proyectos", proyectos != null ? proyectos : new ArrayList<>());
+
+        if(proyectos != null && !proyectos.isEmpty()){
+            Proyecto proyectoSeleccionado = (proyectoId != null)
+                ? proyectoRepository.findById(proyectoId).orElse(proyectos.get(0))
+                : proyectos.get(0);
+
         DashboardProyectoDTO dashboard = metaService.obtenerResumenDashboard(proyectoSeleccionado.getId(), vigencia);
 
         List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
@@ -66,18 +68,21 @@ public class WebController {
         BigDecimal totalSgp = BigDecimal.ZERO;
 
         for(Actividad act : actividades){
-            totalPropios = totalPropios.add(presupuestoService.obtenerSaldoDisponible(act.getId(),FuenteFinanciacion.PROPIOS));
+            totalPropios = totalPropios.add(presupuestoService.obtenerSaldoDisponible(act.getId(), FuenteFinanciacion.LIBRE_DESTINACION));
             totalSgp = totalSgp.add(presupuestoService.obtenerSaldoDisponible(act.getId(), FuenteFinanciacion.SGP));
         }
 
-        model.addAttribute("proyectos", proyectos);
-        model.addAttribute("proyecto", proyectoSeleccionado);
-        model.addAttribute("dashboard", dashboard);
-        model.addAttribute("vigencia", vigencia);
-        model.addAttribute("totalPropios", totalPropios);
-        model.addAttribute("totalSgp", totalSgp);
-
-        return "index";
+            model.addAttribute("proyecto", proyectoSeleccionado);
+            model.addAttribute("dashboard", dashboard);
+            model.addAttribute("totalPropios", totalPropios);
+            model.addAttribute("totalSgp", totalSgp);
+        }else{
+            model.addAttribute("proyecto", null);
+            model.addAttribute("dashboard", null);
+            model.addAttribute("totalPropios", BigDecimal.ZERO);
+            model.addAttribute("totalSgp", BigDecimal.ZERO);
+        }
+        return "index";                
     }   
 
     /**
@@ -89,9 +94,9 @@ public class WebController {
 
         model.addAttribute("tiposMovimiento", TipoMovimiento.values());
         model.addAttribute("fuentes", FuenteFinanciacion.values());
-        model.addAttribute("proyectos", proyectos);
+        model.addAttribute("proyectos", proyectos != null ? proyectos : new ArrayList<>());
 
-        if (!proyectos.isEmpty()) {
+        if (proyectos != null && !proyectos.isEmpty()) {
             Proyecto proyectoSeleccionado = (proyectoId != null)
             ? proyectoRepository.findById(proyectoId).orElse(proyectos.get(0))
             : proyectos.get(0);
@@ -102,6 +107,10 @@ public class WebController {
             model.addAttribute("proyecto", proyectoSeleccionado);
             model.addAttribute("resumenPresupuestal", resumen);
             model.addAttribute("actividades", actividades);
+        } else{ //vacio
+            model.addAttribute("proyecto", null);
+            model.addAttribute("resumenPresupuestal", new ArrayList<>());
+            model.addAttribute("actividades", new ArrayList<>());
         }
         return "presupuesto";
     }
@@ -140,37 +149,44 @@ public class WebController {
     }
 
     @GetMapping ("/proyectos")
-    public String listarProyecto(Model model){
-        model.addAttribute("proyectos", proyectoService.obtenerTodos());
+    public String listarProyectos(@RequestParam (defaultValue = "2026") Integer vigencia, Model model){
+        List<Proyecto> proyectos = proyectoService.obtenerPorVigencia(vigencia);
+        
+        model.addAttribute("proyectos", proyectos != null ? proyectos : new ArrayList<>());
+        model.addAttribute("vigencia", vigencia);
+        model.addAttribute("fuentes", FuenteFinanciacion.values());
         model.addAttribute("nuevoProyecto", new ProyectoDTO());
+
         return "proyectos";
     }
 
     @PostMapping ("/proyectos/guardar")
     public String guardarProyecto(@ModelAttribute ProyectoDTO proyectoDTO){
         proyectoService.guardarOActualizar(proyectoDTO);
-        return "redirect:/proyectos";
+        return "redirect:/proyectos?vigencia=" + proyectoDTO.getVigencia();
     }
 
     @PostMapping ("/proyectos/{id}/actividad")
-    public String agregarActividadProyecto(@PathVariable Long id, 
-        @RequestParam String nombreActividad, 
-        @RequestParam (required = false) String descripcion,
-        @RequestParam (required = false) BigDecimal montoInicial,
-        @RequestParam (required = false) FuenteFinanciacion fuente){
-        
-        proyectoService.agregarActividad(id, nombreActividad, descripcion, montoInicial, fuente);
-        
-        return "redirect:/proyectos";
-    }
+    public String agregarActividad(@PathVariable Long id,
+        @RequestParam String nombre,
+        @RequestParam (required = false) BigDecimal presupuestoInicial,
+        @RequestParam (required = false) FuenteFinanciacion fuente,
+        @RequestParam (required = false) String descripcion){
+
+        Actividad act = proyectoService.agregarActividad(id, nombre, presupuestoInicial, fuente, descripcion);
+        return "redirect:/proyectos?vigencia=" + act.getProyecto().getVigencia();
+        }
 
     @PostMapping("/actividades/editar")
-    public String editarActividad(@RequestParam Long actividadId, 
-                              @RequestParam String nombre, 
-                              @RequestParam(required = false) String descripcion) {
-    proyectoService.editarActividad(actividadId, nombre, descripcion);
-    return "redirect:/proyectos";
-}
+    public String editarActividad(@RequestParam Long actividadId,
+        @RequestParam String nombre,
+        @RequestParam (required = false) BigDecimal presupuestoInicial,
+        @RequestParam (required = false) FuenteFinanciacion fuente,
+        @RequestParam (required = false) String descripcion){
+
+        Actividad act = proyectoService.editarActividad(actividadId, nombre, presupuestoInicial, fuente, descripcion);
+        return "redirect:/proyectos?vigencia=" +act.getProyecto().getVigencia();
+    }
 
     @PostMapping("/actividades/eliminar/{id}")
     public String eliminarActividad(@PathVariable Long id) {

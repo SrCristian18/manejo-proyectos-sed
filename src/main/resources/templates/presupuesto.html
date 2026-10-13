@@ -105,6 +105,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">Actividad Afectada</label>
                                 <select class="form-select" id="actividadId" required>
+                                    <option value="" disabled selected th:if="${#lists.isEmpty(actividades)}">No hay actividades registradas</option>
                                     <option th:each="act : ${actividades}" th:value="${act.id}" th:text="${act.nombre}"></option>
                                 </select>
                             </div>
