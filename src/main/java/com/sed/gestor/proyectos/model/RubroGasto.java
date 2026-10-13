@@ -32,4 +32,45 @@ public class RubroGasto {
     @JsonIgnoreProperties ("rubros")
     private Actividad actividad;
 
+    public RubroGasto(){
+    }
+
+    public RubroGasto(String concepto, BigDecimal montoAsignado, Actividad actividad) {
+        this.concepto = concepto;
+        this.montoAsignado = montoAsignado;
+        this.actividad = actividad;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getConcepto() {
+        return concepto;
+    }
+
+    public void setConcepto(String concepto) {
+        this.concepto = concepto;
+    }
+
+    public BigDecimal getMontoAsignado() {
+        return montoAsignado;
+    }
+
+    public void setMontoAsignado(BigDecimal montoAsignado) {
+        this.montoAsignado = montoAsignado;
+    }
+
+    public Actividad getActividad() {
+        return actividad;
+    }
+
+    public void setActividad(Actividad actividad) {
+        this.actividad = actividad;
+    }
+
 }

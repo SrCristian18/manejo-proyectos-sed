@@ -29,19 +29,18 @@
     <div class="card-header bg-white py-3">
         <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calculator text-primary me-2"></i>Estado de Ejecución Presupuestal por Actividad</h5>
     </div>
-    <div class="card-body p-0">
+    <div class="card-body p-0"> <!-- cambios desde aqui -->
         <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle mb-0" style="font-size: 0.9rem;">
+            <table class="table table-bordered table-hover align-middle mb-0" style="font-size: 0.88rem;">
                 <thead class="table-light text-center align-middle">
                     <tr>
                         <th rowspan="2" class="text-start">Actividad (Hito)</th>
-                        <!-- Cabecera Dinámica por cada Fuente -->
-                        <th th:each="f : ${fuentes}" colspan="2" class="fw-bold text-uppercase bg-light-subtle" th:text="${f}">FUENTE</th>
+                        <th th:each="f : ${fuentes}" colspan="2" class="fw-bold text-uppercase bg-light-subtle" th:text="${f.etiqueta}">FUENTE</th>
                         <th rowspan="2" class="text-end bg-light fw-bold">Disponible Total ($)</th>
-                        <th rowspan="2" style="width: 130px;">% Ejecución</th>
+                        <th rowspan="2" style="width: 120px;">% Ejecución</th>
+                        <th rowspan="2" style="width: 130px;">Acciones</th>
                     </tr>
                     <tr>
-                        <!-- Subcabeceras repetidas dinámicamente -->
                         <th:block th:each="f : ${fuentes}">
                             <th class="text-end small">Aprop. Definitiva</th>
                             <th class="text-end small text-success">Disponible</th>
@@ -50,9 +49,9 @@
                 </thead>
                 <tbody>
                     <tr th:each="item : ${resumenPresupuestal}">
-                        <td class="fw-semibold" th:text="${item.nombreActividad}">Actividad</td>
+                        <td class="fw-semibold text-dark" th:text="${item.nombreActividad}">Actividad</td>
                         
-                        <!-- Columnas Dinámicas de Valores por Fuente -->
+                        <!-- Columnas por Fuente -->
                         <th:block th:each="f : ${fuentes}">
                             <td class="text-end" 
                                 th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).apropiacionDefinitiva, 1, 'POINT', 0, 'COMMA')}">$0</td>
@@ -60,19 +59,43 @@
                                 th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).saldoDisponible, 1, 'POINT', 0, 'COMMA')}">$0</td>
                         </th:block>
 
-                        <!-- Total Consolidado -->
+                        <!-- Disponible Total -->
                         <td class="text-end fw-bold fs-6 bg-light" 
                             th:text="${'$' + #numbers.formatDecimal(item.disponibleTotal, 1, 'POINT', 0, 'COMMA')}">$0</td>
 
-                        <!-- Barra de Avance -->
+                        <!-- % Ejecución -->
                         <td>
                             <div class="progress" style="height: 18px;">
                                 <div class="progress-bar bg-info text-dark fw-bold" 
-                                     role="progressbar" 
-                                     th:style="'width: ' + ${item.porcentajeEjecucion} + '%'"
-                                     th:text="${item.porcentajeEjecucion + '%'}">0%</div>
+                                    role="progressbar" 
+                                    th:style="'width: ' + ${item.porcentajeEjecucion} + '%'"
+                                    th:text="${item.porcentajeEjecucion + '%'}">0%</div>
                             </div>
                         </td>
+
+                        <!-- Opciones / Desglose y Trazabilidad -->
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <!-- Botón Ver Rubros / Composición -->
+                                <button class="btn btn-outline-primary" 
+                                        th:data-id="${item.actividadId}" 
+                                        th:data-nombre="${item.nombreActividad}"
+                                        onclick="abrirModalRubros(this)" 
+                                        title="Ver desglose por rubros/conceptos">
+                                    <i class="fa-solid fa-list-ul"></i>
+                                </button>
+
+                                <!-- Botón Ver Trazabilidad CDP / RP (Vista 3.B) -->
+                                <a th:href="@{'/presupuesto/trazabilidad?actividadId=' + ${item.actividadId}}" 
+                                class="btn btn-outline-secondary" 
+                                title="Ver Trazabilidad CDP / RP">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${resumenPresupuestal == null or resumenPresupuestal.isEmpty()}">
+                        <td colspan="9" class="text-center text-muted py-4">No hay actividades registradas para este proyecto.</td>
                     </tr>
                 </tbody>
             </table>
@@ -81,54 +104,53 @@
 </div>
 
     <!-- Modal Registrar Movimiento -->
-    <div class="modal fade" id="modalMovimiento" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Nuevo Acto Administrativo / Modificación</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="modalRubros" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-primary">
+                    <i class="fa-solid fa-coins me-2"></i>Composición de Rubros - <span id="nombreActividadModal"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Tabla de Rubros Existentes -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Concepto de Gasto</th>
+                                <th class="text-end">Monto Asignado ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaRubrosCuerpo">
+                            <!-- Carga dinámica vía JS -->
+                        </tbody>
+                    </table>
                 </div>
-                <form id="formMovimiento">
-                    <div class="modal-body">
-                        <input type="hidden" id="proyectoId" th:value="${proyecto != null ? proyecto.id : ''}">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Tipo de Movimiento</label>
-                                <select class="form-select" id="tipoMovimiento" required>
-                                    <option th:each="tipo : ${tiposMovimiento}" th:value="${tipo}" th:text="${tipo}"></option>
-                                </select>
+
+                <!-- Formulario para agregar un nuevo rubro -->
+                <form id="formNuevoRubro" method="post">
+                    <input type="hidden" name="proyectoId" th:value="${proyecto != null ? proyecto.id : ''}">
+                    <div class="card p-3 border-light bg-light">
+                        <h6 class="fw-bold mb-2">+ Agregar Concepto de Gasto</h6>
+                        <div class="row g-2">
+                            <div class="col-md-7">
+                                <input type="text" name="concepto" class="form-control form-control-sm" placeholder="Ej: Auxilio de transporte, Papelería..." required>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Número Decreto / Soporte</label>
-                                <input type="text" class="form-control" id="numeroDecreto" placeholder="Ej: Decreto No.0304" required>
+                            <div class="col-md-3">
+                                <input type="number" step="0.01" name="montoAsignado" class="form-control form-control-sm" placeholder="Monto $" required>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Actividad Afectada</label>
-                                <select class="form-select" id="actividadId" required>
-                                    <option value="" disabled selected th:if="${#lists.isEmpty(actividades)}">No hay actividades registradas</option>
-                                    <option th:each="act : ${actividades}" th:value="${act.id}" th:text="${act.nombre}"></option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Fuente Financiación</label>
-                                <select class="form-select" id="fuente" required>
-                                    <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f}"></option>
-                                </select>
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label">Monto ($) <small class="text-muted">(Usar valores negativos para reducciones o CDP)</small></label>
-                                <input type="number" step="0.01" class="form-control" id="monto" placeholder="Ej: 500000000 o -200000000" required>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-sm btn-success w-100 fw-bold">Agregar</button>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" onclick="enviarMovimiento()">Guardar Cambio</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+</div>
 
     <script>
         function enviarMovimiento() {
@@ -156,6 +178,52 @@
             .catch(err => alert("Error: " + err.message));
         }
     </script>
+
+<script>
+    function abrirModalRubros(btn) {
+        const actividadId = btn.getAttribute('data-id');
+        const nombreActividad = btn.getAttribute('data-nombre');
+
+        document.getElementById('nombreActividadModal').textContent = nombreActividad;
+        document.getElementById('formNuevoRubro').action = '/actividades/' + actividadId + '/rubros';
+
+        const cuerpoTabla = document.getElementById('tablaRubrosCuerpo');
+        cuerpoTabla.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Cargando rubros...</td></tr>';
+
+        fetch(`/api/actividades/${actividadId}/rubros`)
+            .then(res => res.json())
+            .then(data => {
+                cuerpoTabla.innerHTML = '';
+                if (data.length === 0) {
+                    cuerpoTabla.innerHTML = '<tr><td colspan="2" class="text-center text-muted small">No hay rubros detallados registrados.</td></tr>';
+                    return;
+                }
+                let total = 0;
+                data.forEach(r => {
+                    total += r.montoAsignado;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="fw-semibold">${r.concepto}</td>
+                        <td class="text-end fw-bold">$${Number(r.montoAsignado).toLocaleString('es-CO')}</td>
+                    `;
+                    cuerpoTabla.appendChild(tr);
+                });
+                
+                // Fila Total
+                const trTotal = document.createElement('tr');
+                trTotal.className = 'table-light fw-bold';
+                trTotal.innerHTML = `
+                    <td>TOTAL COMPOSTURA</td>
+                    <td class="text-end text-primary">$${Number(total).toLocaleString('es-CO')}</td>
+                `;
+                cuerpoTabla.appendChild(trTotal);
+            })
+            .catch(err => console.error("Error al obtener rubros:", err));
+
+        new bootstrap.Modal(document.getElementById('modalRubros')).show();
+    }
+</script>
+
 </section>
 </body>
 </html>

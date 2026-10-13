@@ -6,11 +6,13 @@ import com.sed.gestor.proyectos.dto.ProyectoDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.MetaProducto;
 import com.sed.gestor.proyectos.model.Proyecto;
+import com.sed.gestor.proyectos.model.RubroGasto;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
 import com.sed.gestor.proyectos.repository.ActividadRepository;
 import com.sed.gestor.proyectos.repository.MetaProductoRepository;
 import com.sed.gestor.proyectos.repository.ProyectoRepository;
+import com.sed.gestor.proyectos.repository.RubroGastoRepository;
 import com.sed.gestor.proyectos.service.MetaService;
 import com.sed.gestor.proyectos.service.PresupuestoService;
 import com.sed.gestor.proyectos.service.ProyectoService;
@@ -32,19 +34,21 @@ public class WebController {
     private final PresupuestoService presupuestoService;
     private final MetaService metaService;
     private final ProyectoService proyectoService;
+    private final RubroGastoRepository rubroGastoRepository;
 
     public WebController(ProyectoRepository proyectoRepository,
                          ActividadRepository actividadRepository,
                          MetaProductoRepository metaProductoRepository,
                          PresupuestoService presupuestoService,
                          MetaService metaService,
-                        ProyectoService proyectoService) {
+                        ProyectoService proyectoService, RubroGastoRepository rubroGastoRepository) {
         this.proyectoRepository = proyectoRepository;
         this.actividadRepository = actividadRepository;
         this.metaProductoRepository = metaProductoRepository;
         this.presupuestoService = presupuestoService;
         this.metaService = metaService;
         this.proyectoService = proyectoService;
+        this.rubroGastoRepository = rubroGastoRepository;
     }
 
     @GetMapping("/")
@@ -188,6 +192,24 @@ public class WebController {
         Actividad act = proyectoService.agregarActividad(id, nombre, presupuestoInicial, fuente, descripcion);
         return "redirect:/proyectos?vigencia=" + act.getProyecto().getVigencia();
         }
+    
+    @PostMapping ("/actividades/{actividadId}/rubros")
+    public String agregarRubroGasto(@PathVariable Long actividadId,
+            @RequestParam String concepto,
+            @RequestParam BigDecimal montoAsignado,
+            @RequestParam Long proyectoId){
+        Actividad actividad = actividadRepository.findById(actividadId)
+                .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
+        RubroGasto rubro = new RubroGasto(concepto, montoAsignado, actividad);
+        rubroGastoRepository.save(rubro);
+
+        return "redirect:/presupuesto?proyectoId=" + proyectoId;
+    }
+
+    @GetMapping ("/api/actividades/{actividadId}/rubros")
+    public List<RubroGasto> obtenerRubrosActividad(@PathVariable Long actividadId){
+        return rubroGastoRepository.findByActividadId(actividadId);
+    }
 
     @PostMapping("/actividades/editar")
     public String editarActividad(@RequestParam Long actividadId,
