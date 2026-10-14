@@ -11,7 +11,6 @@ public class AjusteCostoDTO {
     private BigDecimal constoAjustado = BigDecimal.ZERO;
 
     public AjusteCostoDTO(){
-
     }
 
     public BigDecimal getCambioEnCosto(){

@@ -17,12 +17,10 @@ import com.sed.gestor.proyectos.repository.ProyectoRepository;
 public class ProyectoService {
     private final ProyectoRepository proyectoRepository;
     private final ActividadRepository actividadRepository;
-    private final PresupuestoService presupuestoService;
 
-    public ProyectoService(ProyectoRepository proyectoRepository, ActividadRepository actividadRepository, PresupuestoService presupuestoService){
+    public ProyectoService(ProyectoRepository proyectoRepository, ActividadRepository actividadRepository){
         this.proyectoRepository = proyectoRepository;
         this.actividadRepository = actividadRepository;
-        this.presupuestoService = presupuestoService;
     }
 
     /*
