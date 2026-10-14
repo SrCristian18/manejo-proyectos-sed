@@ -4,8 +4,9 @@
 <body>
 <section>
     <!-- Encabezado con Selector de Proyecto y Botón Crear Meta -->
+         <!-- No funciona el selector de proyecto -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold mb-0"><i class="fa-solid fa-bullseye text-warning me-2"></i>Seguimiento Físico a Metas PDD</h3>
+        <h3 class="fw-bold mb-0"><i class="fa-solid fa-bullseye text-warning me-2"></i>Cumplimiento de metas de resultado y de produco</h3>
         
         <div class="d-flex align-items-center gap-2">
             <form method="get" action="/metas" class="d-flex align-items-center gap-2">
@@ -19,7 +20,7 @@
             </form>
 
             <button class="btn btn-outline-primary text-nowrap" data-bs-toggle="modal" data-bs-target="#modalCrearMeta">
-                <i class="fa-solid fa-plus me-1"></i> Nueva Meta
+                <i class="fa-solid fa-plus me-1"></i> Añadir nueva Meta
             </button>
         </div>
     </div>
@@ -29,23 +30,25 @@
         <div class="col-md-8">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white py-3">
-                    <h5 class="fw-bold mb-0"><i class="fa-solid fa-list-check me-2 text-primary"></i>Metas y Avance Físico</h5>
+                    <h5 class="fw-bold mb-0"><i class="fa-solid fa-list-check me-2 text-primary"></i>Estado de la meta</h5>
                 </div>
+                    <!-- Cabecera de la tabla -->
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Cód. / Tipo</th>
+                                    <th>Código programa / Tipo de meta</th>
                                     <th>Meta</th>
-                                    <th>Unidad</th>
-                                    <th class="text-end">Programado</th>
-                                    <th class="text-end">Ejecutado</th>
+                                    <th>Unidad de medida</th>
+                                    <th class="text-end">Establecido</th>
+                                    <th class="text-end">Realizado</th>
                                     <th style="width: 140px;">% Avance</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:each="m : ${metas}">
+                                        <!-- Contenido de tabla -->
                                     <td>
                                         <span class="badge mb-1 d-block" 
                                               th:classappend="${m.tipoMeta == 'RESULTADO' ? 'bg-info text-dark' : 'bg-primary'}"
@@ -83,7 +86,7 @@
         <div class="col-md-4">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white py-3">
-                    <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-pen-to-square text-warning me-2"></i>Reportar Avance Trimestral</h5>
+                    <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-pen-to-square text-warning me-2"></i>Reportar avances trimestrales</h5>
                 </div>
                 <div class="card-body">
                     <form method="post" action="/metas/avance">
@@ -91,19 +94,20 @@
 
                         <!-- 1. Selección de Tipo de Meta -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">1. Seleccionar Tipo de Meta</label>
+                            <label class="form-label fw-bold">Seleccionar Tipo de Meta</label>
                             <select id="selectTipoMeta" class="form-select" onchange="cargarMetasPorTipo()">
-                                <option value="" selected>-- Todas las Metas --</option>
+                                <option value="" disabled selected>-- Seleccione un tipo de meta --</option>
                                 <option value="RESULTADO">Meta de Resultado (Política Pública)</option>
                                 <option value="PRODUCTO">Meta de Producto (Cuatrienio)</option>
                             </select>
                         </div>
 
                         <!-- 2. Selección de la Meta -->
+                        <!-- Hasta que no se selecione un tipo de meta, esta no se debe habilitar -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">2. Seleccionar Meta a Reportar</label>
+                            <label class="form-label fw-bold">Seleccionar Meta a Reportar</label>
                             <select id="selectMeta" name="metaId" class="form-select" required>
-                                <option value="" disabled selected>-- Elija una Meta --</option>
+                                <option value="" disabled selected>-- Seleccione una meta --</option>
                                 <option th:each="m : ${metas}" 
                                         th:value="${m.id}" 
                                         th:text="${(m.codigoPrograma != null ? '[' + m.codigoPrograma + '] ' : '') + m.descripcion}">
@@ -116,6 +120,7 @@
                             <div class="col-md-7">
                                 <label class="form-label fw-bold">Trimestre</label>
                                 <select name="periodoTrimestre" class="form-select" required>
+                                    <option value="" disabled selected>-- Seleccione un periodo --</option>
                                     <option value="1">Trimestre 1 (Marzo)</option>
                                     <option value="2">Trimestre 2 (Junio)</option>
                                     <option value="3">Trimestre 3 (Septiembre)</option>
@@ -127,21 +132,26 @@
                                 <input type="number" name="vigencia" class="form-control fw-bold" value="2026" required>
                             </div>
                         </div>
-
                         <!-- 4. Valor Logrado -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Valor Logrado en este Trimestre</label>
-                            <input type="number" step="0.01" name="valorLogrado" class="form-control" placeholder="Ej: 14" required>
+                            <label class="form-label fw-bold">Valor logrado en el trimestre</label>
+                            <input type="number" step="0.01" name="valorLogrado" class="form-control" placeholder="Ingrese el valor logrado" required>
                         </div>
 
                         <!-- 5. Observaciones -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Observaciones / Soporte</label>
-                            <textarea name="observaciones" class="form-control" rows="2" placeholder="Soporte o detalles del avance..."></textarea>
+                            <label class="form-label fw-bold">Observaciones</label>
+                            <textarea name="observaciones" class="form-control" rows="2" placeholder="Ingrese las observaciones"></textarea>
+                        </div>
+                        <!-- 6. Anexos (Revisar) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Soportes/Anexos</label>
+                            <input type="file" id="soporte" name="anexo">
+                            <button type="submit">Enviar</button>
                         </div>
 
                         <button type="submit" class="btn btn-warning w-100 fw-bold">
-                            <i class="fa-solid fa-check me-1"></i> Registrar Avance Físico
+                            <i class="fa-solid fa-check me-1"></i> Registrar avance
                         </button>
                     </form>
                 </div>
@@ -149,7 +159,7 @@
         </div>
     </div>
 
-    <!-- Modal Crear Meta -->
+    <!-- Crear nuevas metas -->
     <div class="modal fade" id="modalCrearMeta" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -164,27 +174,27 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Tipo de Meta</label>
                                 <select name="tipoMeta" class="form-select" required>
-                                    <option value="RESULTADO">Meta de Resultado</option>
                                     <option value="PRODUCTO" selected>Meta de Producto</option>
+                                    <option value="RESULTADO">Meta de Resultado</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">Código Programa</label>
-                                <input type="text" name="codigoPrograma" class="form-control" placeholder="Ej: 02-01-04">
+                                <label class="form-label fw-bold">Código del Programa</label>
+                                <input type="text" name="codigoPrograma" class="form-control" placeholder="XX-XX-XX">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Descripción de la Meta</label>
-                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Ej: Construcción de 5 aulas nuevas" required></textarea>
+                            <label class="form-label fw-bold">Nombre de la meta</label>
+                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Ingrese el nombre de la meta" required></textarea>
                         </div>
                         <div class="row g-2">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Unidad de Medida</label>
-                                <input type="text" name="unidadMedida" class="form-control" placeholder="Ej: Aulas / Sedes" required>
+                                <input type="text" name="unidadMedida" class="form-control" placeholder="Beneficiarios, Convenios, Becas..." required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Programado Anual</label>
-                                <input type="number" step="0.01" name="programadoAnual" class="form-control" placeholder="Ej: 300" required>
+                                <label class="form-label fw-bold">Valor Establecido</label>
+                                <input type="number" step="0.01" name="programadoAnual" class="form-control" placeholder="Numero del objetio establecido" required>
                             </div>
                         </div>
                     </div>

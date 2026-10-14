@@ -4,9 +4,9 @@
 <body>
 <section>
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold mb-0"><i class="fa-solid fa-wallet text-primary me-2"></i>Saldos y Distribución Presupuestal</h3>
+        <h3 class="fw-bold mb-0"><i class="fa-solid fa-wallet text-primary me-2"></i>Distribución presupuestal</h3>
                 
-        <!-- Selector desplegable de Proyectos BPIN -->
+        <!-- Selector de proyectos -->
         <div class="d-flex align-items-center gap-2" style="min-width: 450px;">
             <form method="get" class="d-flex gap-2">
                 <select name="proyectoId" class="form-select fw-bold border-primary" onchange="this.form.submit()">
@@ -19,24 +19,24 @@
             </form>
 
         <button class="btn btn-warning text-dark fw-bold text-nowrap" data-bs-toggle="modal" data-bs-target="#modalActualizarProyecto">
-            <i class="fa-solid fa-pen-to-square me-1"></i> Actualizar Proyecto (Ajuste de Costos)
+            <i class="fa-solid fa-pen-to-square me-1"></i> Ajustar costos (Actualizar proyecto)
         </button>
         </div>
     </div>
 
-    <!-- Tabla de Actividades y Saldos -->
+    <!-- Tabla de actividades y saldos -->
     <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white py-3">
-        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calculator text-primary me-2"></i>Estado de Ejecución Presupuestal por Actividad</h5>
+        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calculator text-primary me-2"></i>Saldos disponibles por actividad</h5>
     </div>
-    <div class="card-body p-0"> <!-- cambios desde aqui -->
+    <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle mb-0" style="font-size: 0.88rem;">
                 <thead class="table-light text-center align-middle">
                     <tr>
                         <th rowspan="2" class="text-start">Actividad (Hito)</th>
                         <th th:each="f : ${fuentes}" colspan="2" class="fw-bold text-uppercase bg-light-subtle" th:text="${f.etiqueta}">FUENTE</th>
-                        <th rowspan="2" class="text-end bg-light fw-bold">Disponible Total ($)</th>
+                        <th rowspan="2" class="text-end bg-light fw-bold">Total Disponible($)</th>
                         <th rowspan="2" style="width: 120px;">% Ejecución</th>
                         <th rowspan="2" style="width: 130px;">Acciones</th>
                     </tr>
@@ -59,11 +59,11 @@
                                 th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).saldoDisponible, 1, 'POINT', 0, 'COMMA')}">$0</td>
                         </th:block>
 
-                        <!-- Disponible Total -->
+                        <!-- Columna Disponible Total -->
                         <td class="text-end fw-bold fs-6 bg-light" 
                             th:text="${'$' + #numbers.formatDecimal(item.disponibleTotal, 1, 'POINT', 0, 'COMMA')}">$0</td>
 
-                        <!-- % Ejecución -->
+                        <!-- Columna % Ejecución -->
                         <td>
                             <div class="progress" style="height: 18px;">
                                 <div class="progress-bar bg-info text-dark fw-bold" 
@@ -73,19 +73,19 @@
                             </div>
                         </td>
 
-                        <!-- Opciones / Desglose y Trazabilidad -->
+                        <!-- Opciones: Detalles de actividad y trazabilidad de RP/CDP -->
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
-                                <!-- Botón Ver Rubros / Composición -->
+                                <!-- Botón Ver detalles de actividad -->
                                 <button class="btn btn-outline-primary" 
                                         th:data-id="${item.actividadId}" 
                                         th:data-nombre="${item.nombreActividad}"
                                         onclick="abrirModalRubros(this)" 
-                                        title="Ver desglose por rubros/conceptos">
+                                        title="Ver detalles de la actividad">
                                     <i class="fa-solid fa-list-ul"></i>
                                 </button>
 
-                                <!-- Botón Ver Trazabilidad CDP / RP (Vista 3.B) -->
+                                <!-- Botón Ver Trazabilidad CDP / RP -->
                                 <a th:href="@{'/presupuesto/trazabilidad?actividadId=' + ${item.actividadId}}" 
                                 class="btn btn-outline-secondary" 
                                 title="Ver Trazabilidad CDP / RP">
@@ -103,13 +103,13 @@
     </div>
 </div>
 
-    <!-- Modal Registrar Movimiento -->
+    <!-- Detalles de actividad -->
 <div class="modal fade" id="modalRubros" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold text-primary">
-                    <i class="fa-solid fa-coins me-2"></i>Composición de Rubros - <span id="nombreActividadModal"></span>
+                    <i class="fa-solid fa-coins me-2"></i>Composición de rubros - <span id="nombreActividadModal"></span>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -136,7 +136,7 @@
                         <h6 class="fw-bold mb-2">+ Agregar Concepto de Gasto</h6>
                         <div class="row g-2">
                             <div class="col-md-7">
-                                <input type="text" name="concepto" class="form-control form-control-sm" placeholder="Ej: Auxilio de transporte, Papelería..." required>
+                                <input type="text" name="concepto" class="form-control form-control-sm" placeholder="Ej: Contratacion, Papelería, Transporte..." required>
                             </div>
                             <div class="col-md-3">
                                 <input type="number" step="0.01" name="montoAsignado" class="form-control form-control-sm" placeholder="Monto $" required>
@@ -151,13 +151,18 @@
         </div>
     </div>
 </div>
-<!-- Modal Actualizar Proyecto (Ajuste de Costos) -->
+
+<!-- Seguimiento de RP/CDP -->
+    <!-- Por implementar -->
+
+
+<!-- Actualizar Proyecto (Ajuste de Costos) -->
 <div class="modal fade" id="modalActualizarProyecto" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header bg-warning-subtle">
                 <h5 class="modal-title fw-bold text-dark">
-                    <i class="fa-solid fa-sliders me-2"></i>Actualización de Proyecto - Redistribución y Ajuste de Costos
+                    <i class="fa-solid fa-sliders me-2"></i>Actualización de Proyecto
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -168,12 +173,12 @@
                     <!-- Acto Administrativo de Soporte -->
                     <div class="row g-3 mb-4 bg-light p-3 rounded">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Número de Decreto / Acto Administrativo</label>
-                            <input type="text" id="decretoActualizacion" class="form-control" placeholder="Ej: Decreto No. 0131 de 14 de Abril de 2026" required>
+                            <label class="form-label fw-bold">Acto Administrativo</label>
+                            <input type="text" id="decretoActualizacion" class="form-control" placeholder="Ingrese el código del acto administrativo" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Justificación / Observación</label>
-                            <input type="text" id="justificacionActualizacion" class="form-control" placeholder="Ej: Redistribución de costos entre actividades de la vigencia">
+                            <label class="form-label fw-bold">Observación</label>
+                            <input type="text" id="justificacionActualizacion" class="form-control" placeholder="Ingrese las observaciones">
                         </div>
                     </div>
 
