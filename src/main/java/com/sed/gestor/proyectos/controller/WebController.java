@@ -7,12 +7,14 @@ import com.sed.gestor.proyectos.dto.ProyectoDTO;
 import com.sed.gestor.proyectos.dto.SolicitudActualizacionDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.MetaProducto;
+import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
 import com.sed.gestor.proyectos.model.Proyecto;
 import com.sed.gestor.proyectos.model.RubroGasto;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
 import com.sed.gestor.proyectos.repository.ActividadRepository;
 import com.sed.gestor.proyectos.repository.MetaProductoRepository;
+import com.sed.gestor.proyectos.repository.MovimientoPresupuestalRepository;
 import com.sed.gestor.proyectos.repository.ProyectoRepository;
 import com.sed.gestor.proyectos.repository.RubroGastoRepository;
 import com.sed.gestor.proyectos.service.MetaService;
@@ -38,13 +40,15 @@ public class WebController {
     private final MetaService metaService;
     private final ProyectoService proyectoService;
     private final RubroGastoRepository rubroGastoRepository;
+    private final MovimientoPresupuestalRepository movimientoRepository;
 
     public WebController(ProyectoRepository proyectoRepository,
                          ActividadRepository actividadRepository,
                          MetaProductoRepository metaProductoRepository,
                          PresupuestoService presupuestoService,
                          MetaService metaService,
-                        ProyectoService proyectoService, RubroGastoRepository rubroGastoRepository) {
+                         ProyectoService proyectoService, RubroGastoRepository rubroGastoRepository,
+                         MovimientoPresupuestalRepository movimientoRepository) {
         this.proyectoRepository = proyectoRepository;
         this.actividadRepository = actividadRepository;
         this.metaProductoRepository = metaProductoRepository;
@@ -52,6 +56,7 @@ public class WebController {
         this.metaService = metaService;
         this.proyectoService = proyectoService;
         this.rubroGastoRepository = rubroGastoRepository;
+        this.movimientoRepository = movimientoRepository;
     }
 
     @GetMapping("/")
@@ -59,14 +64,22 @@ public class WebController {
                         @RequestParam (defaultValue = "2026") Integer vigencia,
                         Model model){
         
-        List<Proyecto> proyectos = proyectoRepository.findAll();
+        List<Proyecto> proyectosDeVigencia = proyectoRepository.findByVigencia(vigencia);
         model.addAttribute("vigencia", vigencia);
-        model.addAttribute("proyectos", proyectos);
+        model.addAttribute("proyectos", proyectosDeVigencia);
 
-        if(proyectos != null && !proyectos.isEmpty()){
-            Proyecto proyectoSeleccionado = (proyectoId != null)
-                ? proyectoRepository.findById(proyectoId).orElse(proyectos.get(0))
-                : proyectos.get(0);
+        if(proyectosDeVigencia != null && !proyectosDeVigencia.isEmpty()){
+            Proyecto proyectoSeleccionado = null;
+            if(proyectoId != null){
+                proyectoSeleccionado = proyectosDeVigencia.stream()
+                    .filter(p -> p.getId().equals(proyectoId))
+                    .findFirst()
+                    .orElse(null);
+            }
+
+        if(proyectoSeleccionado == null){
+            proyectoSeleccionado = proyectosDeVigencia.get(0);
+        }
 
         DashboardProyectoDTO dashboard = metaService.obtenerResumenDashboard(proyectoSeleccionado.getId(), vigencia);
         List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
@@ -109,30 +122,59 @@ public class WebController {
      * Vista de Seguimiento Presupuestal
      */
     @GetMapping("/presupuesto")
-    public String verPresupuesto(@RequestParam (required = false) Long proyectoId, Model model){
-        List<Proyecto> proyectos = proyectoRepository.findAll();
-
-        model.addAttribute("tiposMovimiento", TipoMovimiento.values());
-        model.addAttribute("fuentes", FuenteFinanciacion.values());
-        model.addAttribute("proyectos", proyectos != null ? proyectos : new ArrayList<>());
+    public String verPresupuesto(@RequestParam (required = false) Long proyectoId,
+                                 @RequestParam (defaultValue = "2026") Integer vigencia, 
+                                 Model model){
+        List<Proyecto> proyectos = proyectoRepository.findByVigencia(vigencia);
+        model.addAttribute("proyectos", proyectos);
+        model.addAttribute("vigencia", vigencia);
 
         if (proyectos != null && !proyectos.isEmpty()) {
-            Proyecto proyectoSeleccionado = (proyectoId != null)
-            ? proyectoRepository.findById(proyectoId).orElse(proyectos.get(0))
-            : proyectos.get(0);
-        
+            Proyecto proyectoSeleccionado = null;
+            if (proyectoId != null){
+                proyectoSeleccionado = proyectos.stream()
+                    .filter(p -> p.getId().equals(proyectoId))
+                    .findFirst()
+                    .orElse(null);
+            }
+            if (proyectoSeleccionado == null) {
+                proyectoSeleccionado = proyectos.get(0);
+            }
+
         List<PresupuestoResumenDTO> resumen = presupuestoService.obtenerResumenPresupuestal(proyectoSeleccionado.getId());
-        List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
+        List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());      
 
             model.addAttribute("proyecto", proyectoSeleccionado);
             model.addAttribute("resumenPresupuestal", resumen);
             model.addAttribute("actividades", actividades);
-        } else{ //vacio
+            model.addAttribute("tiposMovimiento", TipoMovimiento.values());
+            model.addAttribute("fuentes", FuenteFinanciacion.values());
+        } else {
             model.addAttribute("proyecto", null);
             model.addAttribute("resumenPresupuestal", new ArrayList<>());
             model.addAttribute("actividades", new ArrayList<>());
+            model.addAttribute("tiposMovimiento", TipoMovimiento.values());
+            model.addAttribute("fuentes", FuenteFinanciacion.values());
         }
         return "presupuesto";
+    }
+
+    @GetMapping ("/presupuesto/trazabilidad")
+    public String verTrazabilidad(@RequestParam (required = false) Long proyectoId,
+            @RequestParam (required = false) Long actividadId,
+            Model model){
+        List<MovimientoPresupuestal> movimientos;
+
+        if(actividadId != null){
+            movimientos = movimientoRepository.findByDetallesActividadId(actividadId);
+        }else if (proyectoId != null){
+            movimientos = movimientoRepository.findByProyectoId(proyectoId);
+        }else{
+            movimientos = movimientoRepository.findAll();
+        }
+
+        model.addAttribute("movimientos", movimientos);
+        return "trazabilidad";
     }
 
     /**

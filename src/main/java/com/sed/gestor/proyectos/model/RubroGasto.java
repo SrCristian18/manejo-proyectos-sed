@@ -29,7 +29,7 @@ public class RubroGasto {
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "actividad_id", nullable = false)
-    @JsonIgnoreProperties ("rubros")
+    @JsonIgnoreProperties ({"proyecto", "actividades"})
     private Actividad actividad;
 
     public RubroGasto(){
