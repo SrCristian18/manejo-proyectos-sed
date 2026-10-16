@@ -1,6 +1,7 @@
 package com.sed.gestor.proyectos.controller;
 
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
+import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
 import com.sed.gestor.proyectos.dto.ProyectoDTO;
 import com.sed.gestor.proyectos.dto.SolicitudActualizacionDTO;
@@ -57,10 +58,10 @@ public class WebController {
     public String index(@RequestParam (required = false) Long proyectoId,
                         @RequestParam (defaultValue = "2026") Integer vigencia,
                         Model model){
+        
         List<Proyecto> proyectos = proyectoRepository.findAll();
-
         model.addAttribute("vigencia", vigencia);
-        model.addAttribute("proyectos", proyectos != null ? proyectos : new ArrayList<>());
+        model.addAttribute("proyectos", proyectos);
 
         if(proyectos != null && !proyectos.isEmpty()){
             Proyecto proyectoSeleccionado = (proyectoId != null)
@@ -68,25 +69,38 @@ public class WebController {
                 : proyectos.get(0);
 
         DashboardProyectoDTO dashboard = metaService.obtenerResumenDashboard(proyectoSeleccionado.getId(), vigencia);
-
         List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
-        BigDecimal totalPropios = BigDecimal.ZERO;
-        BigDecimal totalSgp = BigDecimal.ZERO;
+
+        List<MetricasFuenteDTO> metricasFuentes = new ArrayList<>();
+        BigDecimal sumaRecursosPropios = BigDecimal.ZERO;
+        BigDecimal sumaTotalGeneral = BigDecimal.ZERO;
+
+        for (FuenteFinanciacion fuente : FuenteFinanciacion.values()){
+            BigDecimal acumuladoFuente = BigDecimal.ZERO;
 
         for(Actividad act : actividades){
-            totalPropios = totalPropios.add(presupuestoService.obtenerSaldoDisponible(act.getId(), FuenteFinanciacion.LIBRE_DESTINACION));
-            totalSgp = totalSgp.add(presupuestoService.obtenerSaldoDisponible(act.getId(), FuenteFinanciacion.SGP));
+            acumuladoFuente = acumuladoFuente.add(presupuestoService.obtenerSaldoDisponible(act.getId(), fuente));
         }
 
+            MetricasFuenteDTO metrica = new MetricasFuenteDTO(fuente, acumuladoFuente);
+            metricasFuentes.add(metrica);
+
+            if(fuente.isEsRecursoPropio()){
+                sumaRecursosPropios = sumaRecursosPropios.add(acumuladoFuente);
+            }
+            sumaTotalGeneral = sumaTotalGeneral.add(acumuladoFuente);
+        }
             model.addAttribute("proyecto", proyectoSeleccionado);
             model.addAttribute("dashboard", dashboard);
-            model.addAttribute("totalPropios", totalPropios);
-            model.addAttribute("totalSgp", totalSgp);
+            model.addAttribute("metricasFuentes", metricasFuentes);
+            model.addAttribute("sumaRecursosPropios", sumaRecursosPropios);
+            model.addAttribute("totalGeneral", sumaTotalGeneral);
         }else{
             model.addAttribute("proyecto", null);
-            model.addAttribute("dashboard", null);
-            model.addAttribute("totalPropios", BigDecimal.ZERO);
-            model.addAttribute("totalSgp", BigDecimal.ZERO);
+            model.addAttribute("dashboard", new DashboardProyectoDTO());
+            model.addAttribute("metricasFuentes", new ArrayList<MetricasFuenteDTO>());
+            model.addAttribute("totalRecursosPropios", BigDecimal.ZERO);
+            model.addAttribute("totalGeneral", BigDecimal.ZERO);
         }
         return "index";                
     }   
