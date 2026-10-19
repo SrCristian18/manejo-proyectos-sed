@@ -61,6 +61,11 @@ public class Actividad {
         rubro.setActividad(this);
     }
 
+    public void removeRubro(RubroGasto rubro) {
+        rubros.remove(rubro);
+        rubro.setActividad(null);
+    }
+
     public Long getId() {
         return id;
     }

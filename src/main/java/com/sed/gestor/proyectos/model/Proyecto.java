@@ -8,9 +8,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -28,30 +31,26 @@ public class Proyecto {
     @Column (name = "nombre", nullable = false, length = 255)
     private String nombre;
 
-    @Column (name = "meta_resultado", length = 500) //publica
-    private String metaResultado;
-
-    @Column (name = "meta_producto", length = 500) //distrital
-    private String metaProducto;
-
     @Column (name = "vigencia", nullable = false)
     private Integer vigencia;
+
+    @ManyToOne (fetch = FetchType.LAZY)
+    @JoinColumn (name = "meta_producto_id", nullable = true)
+    @JsonIgnoreProperties ("proyectos")
+    private MetaProducto metaProducto;
 
     @OneToMany (mappedBy = "proyecto", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties ("proyecto")
     private List<Actividad> actividades = new ArrayList<>();
     
-    public Proyecto()
-    {
-        
+    public Proyecto(){
     }
 
-    public Proyecto(String codigoBpin, String nombre, String metaResultado, String metaProducto, Integer vigencia) {
+    public Proyecto(String codigoBpin, String nombre, Integer vigencia, MetaProducto metaProducto) {
         this.codigoBpin = codigoBpin;
         this.nombre = nombre;
-        this.metaResultado = metaResultado;
-        this.metaProducto = metaProducto;
         this.vigencia = vigencia;
+        this.metaProducto = metaProducto;
     }
 
     public void addActividad(Actividad actividad){
@@ -88,28 +87,20 @@ public class Proyecto {
         this.nombre = nombre;
     }
 
-    public String getMetaResultado() {
-        return metaResultado;
-    }
-
-    public void setMetaResultado(String metaResultado) {
-        this.metaResultado = metaResultado;
-    }
-
-    public String getMetaProducto() {
-        return metaProducto;
-    }
-
-    public void setMetaProducto(String metaProducto) {
-        this.metaProducto = metaProducto;
-    }
-
     public Integer getVigencia() {
         return vigencia;
     }
 
     public void setVigencia(Integer vigencia) {
         this.vigencia = vigencia;
+    }
+
+    public MetaProducto getMetaProducto() {
+        return metaProducto;
+    }
+
+    public void setMetaProducto(MetaProducto metaProducto) {
+        this.metaProducto = metaProducto;
     }
 
     public List<Actividad> getActividades() {

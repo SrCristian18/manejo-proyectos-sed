@@ -3,6 +3,8 @@ package com.sed.gestor.proyectos.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -38,10 +40,20 @@ public class AvanceMeta {
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "meta_producto_id", nullable = false)
+    @JsonIgnoreProperties ("avances")
     private MetaProducto metaProducto;
 
     public AvanceMeta(){
+    }
 
+    public AvanceMeta(Integer trimestre, Integer vigencia, BigDecimal valorLogrado, String observaciones,
+            LocalDateTime fechaReporte, MetaProducto metaProducto) {
+        this.trimestre = trimestre;
+        this.vigencia = vigencia;
+        this.valorLogrado = valorLogrado;
+        this.observaciones = observaciones;
+        this.fechaReporte = fechaReporte;
+        this.metaProducto = metaProducto;
     }
 
     public Long getId() {

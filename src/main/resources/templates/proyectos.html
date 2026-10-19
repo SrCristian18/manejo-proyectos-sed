@@ -1,256 +1,75 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" 
-      th:replace="~{layout :: main-layout('Gestión de Proyectos', ~{::section})}">
+      th:replace="~{layout :: main-layout('Estructura PDD y Proyectos', ~{::section})}">
 <body>
 <section>
-    <!-- Encabezado con Filtro de Vigencia -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold mb-0"><i class="fa-solid fa-folder-plus text-primary me-2"></i>Gestión de proyectos</h3>
-            <small class="text-muted">Proyectos pertenecientes a la vigencia seleccionada</small>
+            <h3 class="fw-bold mb-0"><i class="fa-solid fa-sitemap text-primary me-2"></i>Estructura PDD 2024-2027</h3>
+            <p class="text-muted mb-0">Configuración jerárquica del Plan de Desarrollo Distrital</p>
         </div>
-        
-        <div class="d-flex gap-3 align-items-center">
-            <!-- Selector de Vigencia -->
-            <form method="get" action="/proyectos" class="d-flex align-items-center gap-2">
-                <label class="fw-bold me-1 mb-0"><i class="fa-solid fa-calendar me-1"></i>Vigencia:</label>
-                <select name="vigencia" class="form-select fw-bold border-primary" onchange="this.form.submit()">
-                    <option value="2024" th:selected="${vigencia == 2024}">2024</option>
-                    <option value="2025" th:selected="${vigencia == 2025}">2025</option>
-                    <option value="2026" th:selected="${vigencia == 2026}">2026</option>
-                    <option value="2027" th:selected="${vigencia == 2027}">2027</option>
-                </select>
-            </form>
-            <!-- Boton de crear proyecto-->
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalProyecto">
-                <i class="fa-solid fa-plus me-1"></i> Crear nuevo proyecto
+        <div>
+            <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalCrearProyecto">
+                <i class="fa-solid fa-plus me-1"></i> Nuevo Proyecto
             </button>
         </div>
     </div>
 
-    <!-- Lista de Proyectos -->
-    <div class="row g-4" th:if="${proyectos != null and !proyectos.isEmpty()}">
-        <div class="col-md-12" th:each="p : ${proyectos}">
-            <div class="card shadow-sm border-0 mb-3">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <div>
-                        <!--Encabezado de lista de proyectos-->
-                        <span class="badge bg-primary me-2" th:text="${'BPIN: ' + p.codigoBpin}">BPIN</span>
-                        <span class="badge bg-secondary me-2" th:text="${'Vigencia ' + p.vigencia}">2026</span>
-                        <h5 class="fw-bold d-inline" th:text="${p.nombre}">Nombre del Proyecto</h5>
-                    </div>
-                    <button class="btn btn-sm btn-outline-success" th:onclick="'abrirModalActividad(' + ${p.id} + ')'">
-                        <i class="fa-solid fa-plus me-1"></i> Agregar Actividad
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3 bg-light p-2 rounded">
-                        <div class="col-md-6">
-                        <!--Un proyecto puede quizás tener más de una meta resultado-->
-                            <small class="text-muted d-block text-uppercase fw-bold">Meta de Resultado</small>
-                            <span class="fw-semibold text-dark" th:text="${p.metaResultado != null ? p.metaResultado : 'Sin definir'}">Meta Resultado</span>
-                        </div>
-                        <!--Un proyecto puede tener más de una meta producto-->
-                        <div class="col-md-6">
-                            <small class="text-muted d-block text-uppercase fw-bold">Meta de Producto (Cuatrienio)</small>
-                            <span class="fw-semibold text-dark" th:text="${p.metaProducto != null ? p.metaProducto : 'Sin definir'}">Meta Producto</span>
-                        </div>
-                    </div>
+    <!-- Acordeón Jerárquico PDD -->
+    <div class="accordion shadow-sm border-0" id="accordionPDD">
+        <div class="accordion-item mb-2 border rounded" th:each="linea : ${lineasEstrategicas}">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold bg-light" type="button" 
+                        th:data-bs-toggle="'collapse'" 
+                        th:data-bs-target="'#collapseLinea' + ${linea.id}">
+                    <span class="badge bg-primary me-2" th:text="${linea.codigo}">L1</span>
+                    <span th:text="${linea.nombre}">Línea Estratégica</span>
+                    <span class="ms-auto text-muted me-3 small" th:text="${linea.odsRelacionado}">ODS</span>
+                </button>
+            </h2>
+            <div th:id="'collapseLinea' + ${linea.id}" class="accordion-collapse collapse" data-bs-parent="#accordionPDD">
+                <div class="accordion-body">
+                    <!-- Impulsores de Avance -->
+                    <div class="ms-3 mb-3" th:each="impulsor : ${linea.impulsores}">
+                        <h6 class="fw-bold text-secondary">
+                            <i class="fa-solid fa-angles-right text-info me-1"></i>
+                            <span th:text="${impulsor.codigo + ' - ' + impulsor.nombre}">Impulsor</span>
+                        </h6>
+                        
+                        <!-- Metas de Resultado -->
+                        <div class="ms-3 mb-2" th:each="metaRes : ${impulsor.metasResultado}">
+                            <div class="p-2 bg-light-subtle rounded border mb-2">
+                                <span class="badge bg-secondary me-1" th:text="${metaRes.codigo}">MR</span>
+                                <strong th:text="${metaRes.descripcion}">Meta Resultado</strong>
+                                
+                                <!-- Programas -->
+                                <div class="ms-4 mt-2" th:each="prog : ${metaRes.programas}">
+                                    <div class="text-dark fw-semibold small">
+                                        <i class="fa-solid fa-folder-tree text-warning me-1"></i>
+                                        <span th:text="${prog.codigo + ' - ' + prog.nombre}">Programa</span>
+                                    </div>
 
-                    <!-- Lista de Actividades -->
-                    <h6 class="fw-bold text-muted mb-2"><i class="fa-solid fa-tasks me-1"></i>Actividades Asociadas al proyecto</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Actividad</th>
-                                    <th>Fuente</th>
-                                    <th class="text-end">Presupuesto Inicial ($)</th>
-                                    <th>Descripción</th>
-                                    <th class="text-center" style="width: 100px;">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="act : ${p.actividades}">
-                                    <td class="fw-semibold" th:text="${act.nombre}">Nombre Actividad</td>
-                                    <td>
-                                        <span class="badge bg-info text-dark" th:text="${act.fuente != null ? act.fuente.etiqueta : 'Sin asignar'}">PROPIOS</span>
-                                    </td>
-                                    <td class="text-end fw-bold" th:text="${act.presupuestoInicial != null ? '$' + #numbers.formatDecimal(act.presupuestoInicial, 1, 'POINT', 0, 'COMMA') : '$0'}">$0</td>
-                                    <td class="small text-muted" th:text="${act.descripcion}">Descripción</td>
-                                    <td class="text-center">
-                                        <button class="btn btn-sm btn-outline-warning me-1"
-                                                th:data-id="${act.id}"
-                                                th:data-nombre="${act.nombre}"
-                                                th:data-monto="${act.presupuestoInicial}"
-                                                th:data-fuente="${act.fuente}"
-                                                th:data-descripcion="${act.descripcion}"
-                                                onclick="prepararEdicionActividad(this)"
-                                                title="Editar actividad">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
-                                        <form th:action="@{'/actividades/eliminar/' + ${act.id}}" method="post" class="d-inline"
-                                              onsubmit="return confirm('¿Eliminar esta actividad?');">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar actividad"><i class="fa-solid fa-trash"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                <tr th:if="${p.actividades == null or p.actividades.isEmpty()}">
-                                    <td colspan="5" class="text-center text-muted small py-3">No hay actividades registradas en esta vigencia.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                    <!-- Metas Producto -->
+                                    <div class="ms-4 my-1" th:each="metaProd : ${prog.metasProducto}">
+                                        <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded border-start border-3 border-info">
+                                            <div>
+                                                <span class="badge bg-info text-dark" th:text="${metaProd.codigo}">MP</span>
+                                                <span class="small fw-semibold" th:text="${metaProd.descripcion}">Meta Producto</span>
+                                            </div>
+                                            <!-- Lista de Proyectos de esta Meta Producto -->
+                                            <div>
+                                                <span class="badge bg-success" th:text="${metaProd.proyectos.size() + ' Proyectos'}">0 Proyectos</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Mensaje cuando la base de datos está vacía -->
-    <div class="col-12 text-center text-muted py-5" th:if="${proyectos == null or proyectos.isEmpty()}">
-        <i class="fa-solid fa-folder-open fs-1 d-block mb-2 text-secondary"></i>
-        <h5>No hay proyectos registrados para la vigencia seleccionada</h5>
-        <p class="small">Haga clic en el botón <strong>"Crear nuevo proyecto"</strong> para registrar el primer proyecto.</p>
-    </div>
-
-    <!-- Modal Crear Proyecto -->
-    <div class="modal fade" id="modalProyecto" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Crear nuevo proyecto</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form method="post" action="/proyectos/guardar">
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-8">
-                                <label class="form-label fw-bold">Código BPIN</label>
-                                <input type="text" name="codigoBpin" class="form-control" placeholder="Ej: 2024130010248" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Vigencia Fiscal</label>
-                                <input type="number" name="vigencia" class="form-control fw-bold" th:value="${vigencia}" required>
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-bold">Nombre del Proyecto</label>
-                                <input type="text" name="nombre" class="form-control" placeholder="Nombre completo del proyecto..." required>
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-bold">Meta de Resultado</label>
-                                <textarea name="metaResultado" class="form-control" rows="2" placeholder="Ingrese la(s) meta(s) de resultado a la que está asociada el proyecto"></textarea>
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-bold">Meta de Producto</label>
-                                <textarea name="metaProducto" class="form-control" rows="2" placeholder="Ingrese la(s) meta(s) de producto a la que está asociada el proyecto"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary fw-bold">Guardar Proyecto</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Agregar Actividades -->
-    <div class="modal fade" id="modalActividad" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Agregar Actividad al Proyecto</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form id="formActividad" method="post">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Nombre de la Actividad</label>
-                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Dotación de aulas de informática" required>
-                        </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Presupuesto Inicial ($)</label>
-                                <input type="number" step="0.01" name="presupuestoInicial" class="form-control" placeholder="0" value="0">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Fuente de Financiación</label>
-                                <select name="fuente" class="form-select">
-                                    <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}"></option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Descripción</label>
-                            <textarea name="descripcion" class="form-control" rows="2"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success fw-bold">Guardar Actividad</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Editar Actividad -->
-    <div class="modal fade" id="modalEditarActividad" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Editar Actividad</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form method="post" action="/actividades/editar">
-                    <input type="hidden" id="editActividadId" name="actividadId">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Nombre de la Actividad</label>
-                            <input type="text" id="editNombreActividad" name="nombre" class="form-control" required>
-                        </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Presupuesto Inicial ($)</label>
-                                <input type="number" step="0.01" id="editMontoActividad" name="presupuestoInicial" class="form-control">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Fuente</label>
-                                <select id="editFuenteActividad" name="fuente" class="form-select">
-                                    <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}"></option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Descripción</label>
-                            <textarea id="editDescripcionActividad" name="descripcion" class="form-control" rows="2"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-warning fw-bold">Actualizar Cambios</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function abrirModalActividad(proyectoId) {
-            document.getElementById('formActividad').action = '/proyectos/' + proyectoId + '/actividad';
-            new bootstrap.Modal(document.getElementById('modalActividad')).show();
-        }
-
-        function prepararEdicionActividad(btn) {
-            document.getElementById('editActividadId').value = btn.getAttribute('data-id');
-            document.getElementById('editNombreActividad').value = btn.getAttribute('data-nombre');
-            document.getElementById('editMontoActividad').value = btn.getAttribute('data-monto');
-            document.getElementById('editFuenteActividad').value = btn.getAttribute('data-fuente');
-            document.getElementById('editDescripcionActividad').value = btn.getAttribute('data-descripcion') || '';
-            new bootstrap.Modal(document.getElementById('modalEditarActividad')).show();
-        }
-    </script>
 </section>
 </body>
 </html>

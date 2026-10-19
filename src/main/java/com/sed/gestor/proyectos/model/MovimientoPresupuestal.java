@@ -54,6 +54,10 @@ public class MovimientoPresupuestal {
     @JsonIgnoreProperties ("movimiento")
     private List<DetalleMovimiento> detalles = new ArrayList<>();
 
+    @OneToMany (mappedBy = "movimiento", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties ("movimiento")
+    private List<DocumentoSoporte> documentos = new ArrayList<>();
+
     public MovimientoPresupuestal() {
     }
 
@@ -67,52 +71,80 @@ public class MovimientoPresupuestal {
         detalle.setMovimiento(null);
     }
 
+    public void addDocumento(DocumentoSoporte documento) {
+        documentos.add(documento);
+        documento.setMovimiento(this);
+    }
+
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
+
     public Proyecto getProyecto() {
         return proyecto;
     }
+
     public void setProyecto(Proyecto proyecto) {
         this.proyecto = proyecto;
     }
+
     public TipoMovimiento getTipoMovimiento() {
         return tipoMovimiento;
     }
+
     public void setTipoMovimiento(TipoMovimiento tipoMovimiento) {
         this.tipoMovimiento = tipoMovimiento;
     }
+
     public String getNumeroDecreto() {
         return numeroDecreto;
     }
+
     public void setNumeroDecreto(String numeroDecreto) {
         this.numeroDecreto = numeroDecreto;
     }
+
     public LocalDate getFechaDecreto() {
         return fechaDecreto;
     }
+
     public void setFechaDecreto(LocalDate fechaDecreto) {
         this.fechaDecreto = fechaDecreto;
     }
+
     public LocalDateTime getFechaRegistro() {
         return fechaRegistro;
     }
+
     public void setFechaRegistro(LocalDateTime fechaRegistro) {
         this.fechaRegistro = fechaRegistro;
     }
+
     public String getObservaciones() {
         return observaciones;
     }
+
     public void setObservaciones(String observaciones) {
         this.observaciones = observaciones;
     }
-    public List<DetalleMovimiento> getDetalles(){
+
+    public List<DetalleMovimiento> getDetalles() {
         return detalles;
     }
+
     public void setDetalles(List<DetalleMovimiento> detalles) {
         this.detalles = detalles;
+    }
+
+    public List<DocumentoSoporte> getDocumentos() {
+        return documentos;
+    }
+
+    public void setDocumentos(List<DocumentoSoporte> documentos) {
+        this.documentos = documentos;
     }
 }

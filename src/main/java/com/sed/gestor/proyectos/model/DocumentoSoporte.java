@@ -2,6 +2,8 @@ package com.sed.gestor.proyectos.model;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -35,6 +37,7 @@ public class DocumentoSoporte {
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "movimiento_id", nullable = false)
+    @JsonIgnoreProperties ("documentos")
     private MovimientoPresupuestal movimiento;
 
     public DocumentoSoporte(){
