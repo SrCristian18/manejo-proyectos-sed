@@ -1,57 +1,31 @@
 package com.sed.gestor.proyectos.dto;
 
-import java.math.BigDecimal;
-
 public class ProyectoDTO {
     private Long id;
     private String codigoBpin;
     private String nombre;
-    private String programa;
-    private String politicaPublica;
-    private String ejeEstrategico;
-    private BigDecimal presupuestoInicialGlobal = BigDecimal.ZERO;
+    private String metaResultado;
+    private String metaProducto;
+    private Integer vigencia;
 
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public String getCodigoBpin() {
-        return codigoBpin;
-    }
-    public void setCodigoBpin(String codigoBpin) {
-        this.codigoBpin = codigoBpin;
-    }
-    public String getNombre() {
-        return nombre;
-    }
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-    public String getPrograma() {
-        return programa;
-    }
-    public void setPrograma(String programa) {
-        this.programa = programa;
-    }
-    public String getPoliticaPublica() {
-        return politicaPublica;
-    }
-    public void setPoliticaPublica(String politicaPublica) {
-        this.politicaPublica = politicaPublica;
-    }
-    public String getEjeEstrategico() {
-        return ejeEstrategico;
-    }
-    public void setEjeEstrategico(String ejeEstrategico) {
-        this.ejeEstrategico = ejeEstrategico;
-    }
-    public BigDecimal getPresupuestoInicialGlobal() {
-        return presupuestoInicialGlobal;
-    }
-    public void setPresupuestoInicialGlobal(BigDecimal presupuestoInicialGlobal) {
-        this.presupuestoInicialGlobal = presupuestoInicialGlobal;
-    }
-    
+    public ProyectoDTO() {}
+
+    // Getters y Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getCodigoBpin() { return codigoBpin; }
+    public void setCodigoBpin(String codigoBpin) { this.codigoBpin = codigoBpin; }
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public String getMetaResultado() { return metaResultado; }
+    public void setMetaResultado(String metaResultado) { this.metaResultado = metaResultado; }
+
+    public String getMetaProducto() { return metaProducto; }
+    public void setMetaProducto(String metaProducto) { this.metaProducto = metaProducto; }
+
+    public Integer getVigencia() { return vigencia; }
+    public void setVigencia(Integer vigencia) { this.vigencia = vigencia; }
 }

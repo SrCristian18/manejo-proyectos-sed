@@ -3,42 +3,52 @@
       th:replace="~{layout :: main-layout('Dashboard Ejecutivo', ~{::section})}">
 <body>
 <section>
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Cabecera con Selector de Proyecto y Vigencia -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-            <h2 class="fw-bold mb-0" th:text="${proyecto != null ? proyecto.nombre : 'Proyecto no cargado'}">Nombre Proyecto</h2>
+            <h2 class="fw-bold mb-0" th:text="${proyecto != null ? proyecto.nombre : 'Sin proyectos registrados'}">Nombre Proyecto</h2>
             <p class="text-muted mb-0">BPIN: <span class="fw-bold text-dark" th:text="${proyecto != null ? proyecto.codigoBpin : 'N/A'}"></span></p>
         </div>
         <div>
-            <!-- Selector desplegable de Proyectos BPIN -->
-            <form method="get" class="d-flex gap-2">
-                <select name="proyectoId" class="form-select fw-bold border-primary" onchange="this.form.submit()">
+            <form method="get" action="/" class="d-flex gap-2 align-items-center">
+                <!-- Selector de Vigencia -->
+                <select name="vigencia" class="form-select fw-semibold" onchange="this.form.submit()" style="width: 150px;">
+                    <option value="2024" th:selected="${vigencia == 2024}">Vigencia 2024</option>
+                    <option value="2025" th:selected="${vigencia == 2025}">Vigencia 2025</option>
+                    <option value="2026" th:selected="${vigencia == 2026}">Vigencia 2026</option>
+                    <option value="2027" th:selected="${vigencia == 2027}">Vigencia 2027</option>
+                </select>
+                
+                <!-- Selector de Proyecto -->
+                <select name="proyectoId" class="form-select fw-semibold" onchange="this.form.submit()" style="min-width: 250px;">
+                    <option value="" disabled th:if="${proyectos == null or proyectos.isEmpty()}">No hay proyectos en esta vigencia</option>
                     <option th:each="p : ${proyectos}" 
                             th:value="${p.id}" 
-                            th:text="${'BPIN ' + p.codigoBpin + ' - ' + p.nombre}"
-                            th:selected="${p.id == proyecto.id}">
+                            th:text="${p.nombre}" 
+                            th:selected="${proyecto != null and proyecto.id == p.id}">
+                        Proyecto
                     </option>
                 </select>
             </form>
         </div>
     </div>
 
-    <!-- Cards KPI -->
+    <!-- Cards KPI Dinámicas por Fuentes de Financiación -->
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card card-counter shadow-sm h-100 p-3 bg-white">
-                <div class="text-muted small text-uppercase">Disponible Rec. Propios</div>
-                <div class="fs-4 fw-bold text-primary" th:text="${'$' + #numbers.formatDecimal(totalPropios, 1, 'POINT', 0, 'COMMA')}">$0</div>
+        <!-- Renderizado dinámico de tarjetas por cada fuente configurada -->
+        <div class="col-md-3" th:each="mf : ${metricasFuentes}">
+            <div class="card shadow-sm h-100 p-3 bg-white" 
+                 th:style="'border-left: 4px solid ' + ${mf.colorHex} + ';'">
+                <div class="text-muted small text-uppercase fw-bold" th:text="${'Disponible ' + mf.etiqueta}">DISPONIBLE FUENTE</div>
+                <div class="fs-4 fw-bold" th:style="'color: ' + ${mf.colorHex} + ';'"
+                     th:text="${'$' + #numbers.formatDecimal(mf.saldoDisponible, 1, 'POINT', 0, 'COMMA')}">$0</div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card card-counter-success shadow-sm h-100 p-3 bg-white">
-                <div class="text-muted small text-uppercase">Disponible SGP</div>
-                <div class="fs-4 fw-bold text-success" th:text="${'$' + #numbers.formatDecimal(totalSgp, 1, 'POINT', 0, 'COMMA')}">$0</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card card-counter-warning shadow-sm h-100 p-3 bg-white">
-                <div class="text-muted small text-uppercase">Avance Físico Promedio Metas PDD</div>
+
+        <!-- Tarjeta de Avance de Metas PDD -->
+        <div class="col-md-3">
+            <div class="card card-counter-warning shadow-sm h-100 p-3 bg-white" style="border-left: 4px solid #ffc107;">
+                <div class="text-muted small text-uppercase fw-bold">Avance Promedio Metas PDD</div>
                 <div class="fs-4 fw-bold text-dark" th:text="${dashboard != null ? dashboard.porcentajeAvanceFisicoPromedio + '%' : '0%'}">0%</div>
             </div>
         </div>
@@ -47,14 +57,14 @@
     <!-- Gráficos -->
     <div class="row g-4 mb-4">
         <div class="col-md-6">
-            <div class="card shadow-sm p-3 bg-white">
+            <div class="card shadow-sm p-3 bg-white h-100">
                 <h5 class="fw-bold mb-3"><i class="fa-solid fa-pie-chart text-primary me-2"></i>Distribución de Saldos Disponible</h5>
                 <canvas id="chartPresupuesto" style="max-height: 280px;"></canvas>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card shadow-sm p-3 bg-white">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-bar text-success me-2"></i>Avance de Metas de Producto PDD (%)</h5>
+            <div class="card shadow-sm p-3 bg-white h-100">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-bar text-success me-2"></i>Avance de Metas PDD (%)</h5>
                 <canvas id="chartMetas" style="max-height: 280px;"></canvas>
             </div>
         </div>
@@ -62,27 +72,36 @@
 
     <!-- Script de Inicialización de Chart.js -->
     <script th:inline="javascript">
-        /* Data inyectada desde Spring Boot */
-        const totalPropios = /*[[${totalPropios}]]*/ 0;
-        const totalSgp = /*[[${totalSgp}]]*/ 0;
-        const resumenMetas = /*[[${dashboard.resumenMetas}]]*/ [];
+        /* Inyección de datos dinámicos desde Thymeleaf */
+        const metricasFuentes = /*[[${metricasFuentes}]]*/ [];
+        const resumenMetas = /*[[${dashboard != null ? dashboard.resumenMetas : {}}]]*/ [];
 
-        // 1. Gráfico de Torta: Presupuesto
+        // 1. Gráfico Circular Dinámico (Doughnut) adaptado a todas las fuentes disponibles
+        const labelsFuentes = metricasFuentes.map(mf => mf.etiqueta);
+        const dataFuentes = metricasFuentes.map(mf => mf.saldoDisponible);
+        const coloresFuentes = metricasFuentes.map(mf => mf.colorHex);
+
         new Chart(document.getElementById('chartPresupuesto'), {
             type: 'doughnut',
             data: {
-                labels: ['Recursos Propios', 'SGP'],
+                labels: labelsFuentes,
                 datasets: [{
-                    data: [totalPropios, totalSgp],
-                    backgroundColor: ['#0d6efd', '#198754']
+                    data: dataFuentes,
+                    backgroundColor: coloresFuentes
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
         });
 
         // 2. Gráfico de Barras: Metas PDD
-        const labelsMetas = resumenMetas.map(m => m.descripcionMeta.substring(0, 30) + '...');
-        const dataAvances = resumenMetas.map(m => m.porcentajeAvanceSimple);
+        const labelsMetas = resumenMetas ? resumenMetas.map(m => m.descripcionMeta ? (m.descripcionMeta.substring(0, 30) + '...') : '') : [];
+        const dataAvances = resumenMetas ? resumenMetas.map(m => m.porcentajeAvanceSimple) : [];
 
         new Chart(document.getElementById('chartMetas'), {
             type: 'bar',
