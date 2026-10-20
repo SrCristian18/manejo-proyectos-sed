@@ -53,9 +53,18 @@ public class Actividad {
     private List<RubroGasto> rubros = new ArrayList<>();
 
     public Actividad(){
+    
     }
 
-    //apoyo
+    public Actividad(String nombre, BigDecimal presupuestoInicial, FuenteFinanciacion fuente, String descripcion,
+            Proyecto proyecto) {
+        this.nombre = nombre;
+        this.presupuestoInicial = presupuestoInicial;
+        this.fuente = fuente;
+        this.descripcion = descripcion;
+        this.proyecto = proyecto;
+    }
+
     public void addRubro(RubroGasto rubro){
         rubros.add(rubro);
         rubro.setActividad(this);

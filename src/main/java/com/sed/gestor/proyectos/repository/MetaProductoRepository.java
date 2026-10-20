@@ -9,6 +9,5 @@ import com.sed.gestor.proyectos.model.MetaProducto;
 
 @Repository 
 public interface MetaProductoRepository extends JpaRepository<MetaProducto, Long>{
-    List<MetaProducto> findByProyectoId(Long proyectoId);
-    List<MetaProducto> findByProyectoIdAndTipoMeta(Long proyectoId, String tipoMeta);
+    List<MetaProducto> findByProgramaId(Long programaId);
 }
