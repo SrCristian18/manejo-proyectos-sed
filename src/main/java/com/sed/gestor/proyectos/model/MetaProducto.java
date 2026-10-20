@@ -1,5 +1,7 @@
 package com.sed.gestor.proyectos.model;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -153,21 +155,24 @@ public class MetaProducto {
         this.avances = avances;
     }
 
-    /* 
-        public BigDecimal getTotalEjecutado(){
-            if(avances == null || avances.isEmpty()) return BigDecimal.ZERO;
-            return avances.stream()
+    //Metodos auxiliares
+    public BigDecimal getAvanceAcumulado() {
+        if (avances == null || avances.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return avances.stream()
                 .map(AvanceMeta::getValorLogrado)
+                .filter(v -> v != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        }
+    }
 
-        public BigDecimal getPorcentajeCumplimiento(){
-            if(programadoAnual == null || programadoAnual.compareTo(BigDecimal.ZERO) == 0){
-                return BigDecimal.ZERO;
-            }
-                return getTotalEjecutado()
-                    .multiply(new BigDecimal("100"))
-                    .divide(programadoAnual,2,RoundingMode.HALF_UP); 
+    public BigDecimal getPorcentajeAvance() {
+        if (metaCuatrienio == null || metaCuatrienio == 0) {
+            return BigDecimal.ZERO;
         }
-    */
+        BigDecimal acumulado = getAvanceAcumulado();
+        BigDecimal meta = BigDecimal.valueOf(metaCuatrienio);
+        return acumulado.multiply(BigDecimal.valueOf(100))
+                .divide(meta, 2, RoundingMode.HALF_UP);
+    }
 }
