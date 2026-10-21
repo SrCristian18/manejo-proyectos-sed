@@ -58,9 +58,12 @@ VALUES
 -- 7. PROYECTOS
 INSERT IGNORE INTO proyectos (id, codigo_bpin, nombre, vigencia, meta_producto_id)
 VALUES 
-(1, '2026130010001', 'Proyecto de Fortalecimiento de la Educación Superior', 2026, 1);
+(1, '2026130010001', 'Proyecto de Fortalecimiento de la Educación Superior', 2026, 1),
+(2, '2024130010250', 'Generación de Oportunidades de Acceso y Permanencia a la Educación para el Trabajo y el Desarrollo Humano para Egresados del Sistema', 2024, 6);
 
 -- 8. ACTIVIDADES
 INSERT IGNORE INTO actividades (id, nombre, presupuesto_inicial, fuente, descripcion, proyecto_id)
 VALUES 
-(1, 'Convocatoria y asignación de créditos condonables', 1500000000.00, 'LIBRE_DESTINACION', 'Asignación de aportes para matrícula', 1);
+(1, 'Convocatoria y asignación de créditos condonables', 1500000000.00, 'LIBRE_DESTINACION', 'Asignación de aportes para matrícula', 1),
+(2, 'Organización de procesos de acompañamiento a la SED y a las IETDH para garantizar la entrega de becas a los beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', ' ', 2),
+(3, 'Entregar becas de educación para el trabajo y el desarrollo humano a beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', ' ', 2);
