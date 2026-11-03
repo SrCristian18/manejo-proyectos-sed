@@ -1,9 +1,12 @@
 package com.sed.gestor.proyectos.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.sed.gestor.proyectos.model.politicapublica.Producto;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -13,6 +16,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -42,6 +46,9 @@ public class Proyecto {
     @OneToMany (mappedBy = "proyecto", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties ("proyecto")
     private List<Actividad> actividades = new ArrayList<>();
+
+    @ManyToMany (mappedBy = "proyectos", fetch = FetchType.LAZY)
+    private Set<Producto> productos = new HashSet<>();
     
     public Proyecto(){
     }
@@ -110,4 +117,13 @@ public class Proyecto {
     public void setActividades(List<Actividad> actividades) {
         this.actividades = actividades;
     }
+
+    public Set<Producto> getProductos() {
+        return productos;
+    }
+
+    public void setProductos(Set<Producto> productos) {
+        this.productos = productos;
+    }
+    
 }
