@@ -5,7 +5,7 @@ services:
   mysql-proyectos:
     image: mysql:8.0
     container_name: mysql-proyectos
-    restart: "no"
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
@@ -17,6 +17,12 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - proyectos-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   # Servicio Backend Spring Boot (Java 21)
   backend-proyectos:
@@ -24,7 +30,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: backend-proyectos
-    restart: "no"
+    restart: on-failure
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     environment:
@@ -34,9 +40,10 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       SERVER_PORT: ${SERVER_PORT}
-      INIT_DATA: ${INIT_DATA}
+      INIT_DATA: ${INIT_DATA:-always}
     depends_on:
-      - mysql-proyectos
+      mysql-proyectos:
+        condition: service_healthy
     networks:
       - proyectos-net
 

@@ -1,10 +1,6 @@
 server:
   port: ${SERVER_PORT:8080}
 
-app:
-  database:
-    init-data: ${INIT_DATA:false}
-
 spring:
   application:
     name: gestor.proyectos
@@ -13,12 +9,19 @@ spring:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:db-proyectos}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  sql:
+    init:
+      mode: ${INIT_DATA:always}
+      data-locations: optional:classpath:database/data.sql
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
+    defer-datasource-initialization: true
     properties:
       hibernate:
         format_sql: true

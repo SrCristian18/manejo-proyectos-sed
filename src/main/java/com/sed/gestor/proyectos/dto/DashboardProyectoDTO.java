@@ -5,35 +5,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DashboardProyectoDTO {
-    private String nombreProyecto;
-    private String codigoBpin;
-    private BigDecimal porcentajeAvanceFisicoPromedio;
-    private List<MetaAvanceDTO> resumenMetas = new ArrayList<>();
 
-    public DashboardProyectoDTO(){}
+    private BigDecimal porcentajeAvanceFisicoPromedio = BigDecimal.ZERO;
+    private List<MetaResumenDTO> resumenMetas = new ArrayList<>();
 
-    public DashboardProyectoDTO(String nombreProyecto, String codigoBpin, BigDecimal porcentajeAvanceFisicoPromedio,
-            List<MetaAvanceDTO> resumenMetas) {
-        this.nombreProyecto = nombreProyecto;
-        this.codigoBpin = codigoBpin;
-        this.porcentajeAvanceFisicoPromedio = porcentajeAvanceFisicoPromedio != null ? porcentajeAvanceFisicoPromedio : BigDecimal.ZERO;
-        this.resumenMetas = resumenMetas != null ? resumenMetas : new ArrayList<>();
+    public DashboardProyectoDTO() {
     }
 
-    public String getNombreProyecto() {
-        return nombreProyecto;
-    }
-
-    public void setNombreProyecto(String nombreProyecto) {
-        this.nombreProyecto = nombreProyecto;
-    }
-
-    public String getCodigoBpin() {
-        return codigoBpin;
-    }
-
-    public void setCodigoBpin(String codigoBpin) {
-        this.codigoBpin = codigoBpin;
+    public DashboardProyectoDTO(BigDecimal porcentajeAvanceFisicoPromedio, List<MetaResumenDTO> resumenMetas) {
+        this.porcentajeAvanceFisicoPromedio = porcentajeAvanceFisicoPromedio;
+        this.resumenMetas = resumenMetas;
     }
 
     public BigDecimal getPorcentajeAvanceFisicoPromedio() {
@@ -44,11 +25,41 @@ public class DashboardProyectoDTO {
         this.porcentajeAvanceFisicoPromedio = porcentajeAvanceFisicoPromedio;
     }
 
-    public List<MetaAvanceDTO> getResumenMetas() {
+    public List<MetaResumenDTO> getResumenMetas() {
         return resumenMetas;
     }
 
-    public void setResumenMetas(List<MetaAvanceDTO> resumenMetas) {
+    public void setResumenMetas(List<MetaResumenDTO> resumenMetas) {
         this.resumenMetas = resumenMetas;
+    }
+
+    // Clase interna para el detalle de avance de cada meta en el gráfico/tabla
+    public static class MetaResumenDTO {
+        private String descripcionMeta;
+        private BigDecimal porcentajeAvanceSimple = BigDecimal.ZERO;
+
+        public MetaResumenDTO() {
+        }
+
+        public MetaResumenDTO(String descripcionMeta, BigDecimal porcentajeAvanceSimple) {
+            this.descripcionMeta = descripcionMeta;
+            this.porcentajeAvanceSimple = porcentajeAvanceSimple;
+        }
+
+        public String getDescripcionMeta() {
+            return descripcionMeta;
+        }
+
+        public void setDescripcionMeta(String descripcionMeta) {
+            this.descripcionMeta = descripcionMeta;
+        }
+
+        public BigDecimal getPorcentajeAvanceSimple() {
+            return porcentajeAvanceSimple;
+        }
+
+        public void setPorcentajeAvanceSimple(BigDecimal porcentajeAvanceSimple) {
+            this.porcentajeAvanceSimple = porcentajeAvanceSimple;
+        }
     }
 }
