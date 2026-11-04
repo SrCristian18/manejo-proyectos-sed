@@ -10,4 +10,6 @@ import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
 @Repository 
 public interface MovimientoPresupuestalRepository extends JpaRepository<MovimientoPresupuestal, Long>{
     List<MovimientoPresupuestal> findByProyectoIdOrderByFechaRegistroDesc(Long proyectoId);
+    List<MovimientoPresupuestal> findByProyectoId(Long proyectoId);
+    List<MovimientoPresupuestal> findByDetallesActividadId(Long actividadId);
 }

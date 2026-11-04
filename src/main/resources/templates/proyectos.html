@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layout :: main-layout('Estructura PDD y Proyectos', ~{::section})}">
+<body>
+<section>
+    <!-- Encabezado con Filtro de Vigencia y Botón Nuevo Proyecto -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0"><i class="fa-solid fa-sitemap text-primary me-2"></i>Estructura PDD 2024-2027</h3>
+            <p class="text-muted mb-0">Configuración jerárquica del Plan de Desarrollo Distrital</p>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <!-- Selector de Vigencia -->
+            <form method="get" action="/proyectos" class="d-flex align-items-center gap-2">
+                <label class="fw-bold me-1 mb-0"><i class="fa-solid fa-calendar me-1"></i>Vigencia:</label>
+                <select name="vigencia" class="form-select fw-bold border-primary shadow-sm" onchange="this.form.submit()">
+                    <option value="2024" th:selected="${vigencia == 2024}">2024</option>
+                    <option value="2025" th:selected="${vigencia == 2025}">2025</option>
+                    <option value="2026" th:selected="${vigencia == 2026}">2026</option>
+                    <option value="2027" th:selected="${vigencia == 2027}">2027</option>
+                </select>
+            </form>
+            
+            <!-- Botón Azul Nuevo Proyecto -->
+            <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearProyecto" onclick="limpiarFormularioProyecto()">
+                <i class="fa-solid fa-plus me-1"></i> Nuevo Proyecto
+            </button>
+        </div>
+    </div>
+
+    <!-- Acordeón Jerárquico PDD -->
+    <div class="accordion shadow-sm border-0" id="accordionPDD">
+        <div class="accordion-item mb-2 border rounded" th:each="linea : ${lineasEstrategicas}">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold bg-light" type="button" 
+                        th:data-bs-toggle="'collapse'" 
+                        th:data-bs-target="'#collapseLinea' + ${linea.id}">
+                    <span class="badge bg-primary me-2" th:text="${linea.codigo}">L1</span>
+                    <span th:text="${linea.nombre}">Línea Estratégica</span>
+                    <span class="ms-auto text-muted me-3 small" th:text="${linea.odsRelacionado}">ODS</span>
+                </button>
+            </h2>
+            <div th:id="'collapseLinea' + ${linea.id}" class="accordion-collapse collapse" data-bs-parent="#accordionPDD">
+                <div class="accordion-body">
+                    <!-- Impulsores de Avance -->
+                    <div class="ms-3 mb-3" th:each="impulsor : ${linea.impulsores}">
+                        <h6 class="fw-bold text-secondary">
+                            <i class="fa-solid fa-angles-right text-info me-1"></i>
+                            <span th:text="${impulsor.codigo + ' - ' + impulsor.nombre}">Impulsor</span>
+                        </h6>
+                        
+                        <!-- Metas de Resultado -->
+                        <div class="ms-3 mb-2" th:each="metaRes : ${impulsor.metasResultado}">
+                            <div class="p-2 bg-light-subtle rounded border mb-2">
+                                <span class="badge bg-secondary me-1" th:text="${metaRes.codigo}">MR</span>
+                                <strong th:text="${metaRes.descripcion}">Meta Resultado</strong>
+                                
+                                <!-- Programas -->
+                                <div class="ms-4 mt-2" th:each="prog : ${metaRes.programas}">
+                                    <div class="text-dark fw-semibold small">
+                                        <i class="fa-solid fa-folder-tree text-warning me-1"></i>
+                                        <span th:text="${prog.codigo + ' - ' + prog.nombre}">Programa</span>
+                                    </div>
+
+                                    <!-- Metas Producto -->
+                                    <div class="ms-4 my-1" th:each="metaProd : ${prog.metasProducto}">
+                                        <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded border-start border-3 border-info">
+                                            <div>
+                                                <span class="badge bg-info text-dark" th:text="${metaProd.codigo}">MP</span>
+                                                <span class="small fw-semibold" th:text="${metaProd.descripcion}">Meta Producto</span>
+                                            </div>
+                                            
+                                            <!-- Botón Desplegable de Proyectos asociable a la Meta Producto -->
+                                            <div>
+                                                <button class="btn btn-sm btn-outline-success fw-bold py-0" 
+                                                        type="button"
+                                                        data-bs-toggle="collapse" 
+                                                        th:data-bs-target="'#collapseMP' + ${metaProd.id}">
+                                                    <span th:text="${metaProd.proyectos != null ? metaProd.proyectos.size() : 0} + ' Proyectos'">0 Proyectos</span> ▾
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- DESPLEGABLE CON LA LISTA DE PROYECTOS DE ESTA META PRODUCTO -->
+                                        <div th:id="'collapseMP' + ${metaProd.id}" class="collapse ms-3 mt-2 p-3 bg-light border rounded">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="fw-bold text-secondary small"><i class="fa-solid fa-folder-open me-1"></i>Proyectos vinculados:</span>
+                                                <button class="btn btn-sm btn-link text-primary p-0 fw-bold small" 
+                                                        th:data-mp-codigo="${metaProd.codigo}"
+                                                        th:data-mp-desc="${metaProd.descripcion}"
+                                                        th:data-mr-desc="${metaRes.descripcion}"
+                                                        onclick="preSeleccionarMetaProducto(this)">
+                                                    <i class="fa-solid fa-plus me-1"></i>Crear proyecto en esta meta
+                                                </button>
+                                            </div>
+
+                                            <div class="table-responsive bg-white rounded border">
+                                                <table class="table table-sm table-hover align-middle mb-0">
+                                                    <thead class="table-light small">
+                                                        <tr>
+                                                            <th>BPIN</th>
+                                                            <th>Nombre del Proyecto</th>
+                                                            <th>Vigencia</th>
+                                                            <th class="text-center">Actividades</th>
+                                                            <th class="text-end">Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr th:each="p : ${metaProd.proyectos}">
+                                                            <td><span class="badge bg-primary" th:text="${p.codigoBpin}">BPIN</span></td>
+                                                            <td class="fw-semibold small" th:text="${p.nombre}">Nombre Proyecto</td>
+                                                            <td><span class="badge bg-secondary" th:text="${p.vigencia}">2026</span></td>
+                                                            <td class="text-center">
+                                                                <span class="badge bg-info text-dark" th:text="${(p.actividades != null ? p.actividades.size() : 0) + ' Actividades'}">0</span>
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <button class="btn btn-sm btn-outline-success py-0" 
+                                                                        th:onclick="'abrirModalAgregarActividad(' + ${p.id} + ')'"
+                                                                        title="Agregar Actividad">
+                                                                    <i class="fa-solid fa-plus me-1"></i> Actividad
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr th:if="${metaProd.proyectos == null or metaProd.proyectos.isEmpty()}">
+                                                            <td colspan="5" class="text-center text-muted small py-2">
+                                                                No hay proyectos vinculados a esta Meta Producto.
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div> <!-- fin metasProducto -->
+                                </div> <!-- fin programas -->
+                            </div> <!-- fin metasResultado -->
+                        </div> <!-- fin impulsores -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: CREAR PROYECTO -->
+    <div class="modal fade" id="modalCrearProyecto" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-folder-plus text-primary me-2"></i>Crear Nuevo Proyecto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="/proyectos/guardar">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Código BPIN</label>
+                                <input type="text" name="codigoBpin" class="form-control" placeholder="Ej: 2026130010001" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Vigencia Fiscal</label>
+                                <input type="number" name="vigencia" class="form-control fw-bold" th:value="${vigencia}" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Nombre del Proyecto</label>
+                                <input type="text" name="nombre" class="form-control" placeholder="Ingrese el nombre completo del proyecto..." required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Meta de Producto (Jerarquía PDD)</label>
+                                <select id="selectMetaProducto" name="metaProducto" class="form-select" required>
+                                    <option value="" disabled selected>-- Seleccione una Meta Producto --</option>
+                                    <option th:each="mp : ${metasProducto}" 
+                                            th:value="${mp.codigo + ' - ' + mp.descripcion}" 
+                                            th:text="${mp.codigo + ' - ' + mp.descripcion}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Meta de Resultado</label>
+                                <textarea id="textMetaResultado" name="metaResultado" class="form-control" rows="2" placeholder="Ingrese o confirme la meta de resultado asociada..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary fw-bold">Guardar Proyecto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: AGREGAR ACTIVIDADES AL PROYECTO -->
+    <div class="modal fade" id="modalActividad" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-tasks me-2"></i>Agregar Actividad al Proyecto</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formActividad" method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre de la Actividad</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Adquisición de licencias y software" required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Presupuesto Inicial ($)</label>
+                                <input type="number" step="0.01" name="presupuestoInicial" class="form-control" value="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Fuente de Financiación</label>
+                                <select name="fuente" class="form-select" required>
+                                    <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}"></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción</label>
+                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Detalles u observaciones de la actividad..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success fw-bold">Guardar Actividad</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS AUXILIARES -->
+    <script>
+        function limpiarFormularioProyecto() {
+            document.getElementById('selectMetaProducto').value = '';
+            document.getElementById('textMetaResultado').value = '';
+        }
+
+        function preSeleccionarMetaProducto(btn) {
+            const mpCodigo = btn.getAttribute('data-mp-codigo');
+            const mpDesc = btn.getAttribute('data-mp-desc');
+            const mrDesc = btn.getAttribute('data-mr-desc');
+            
+            const select = document.getElementById('selectMetaProducto');
+            const valorBuscado = mpCodigo + ' - ' + mpDesc;
+            
+            // Buscar y seleccionar opción coincidente en el desplegable
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === valorBuscado || select.options[i].text.includes(mpCodigo)) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+            
+            document.getElementById('textMetaResultado').value = mrDesc || '';
+            new bootstrap.Modal(document.getElementById('modalCrearProyecto')).show();
+        }
+
+        function abrirModalAgregarActividad(proyectoId) {
+            document.getElementById('formActividad').action = '/proyectos/' + proyectoId + '/actividad';
+            new bootstrap.Modal(document.getElementById('modalActividad')).show();
+        }
+    </script>
+</section>
+</body>
+</html>

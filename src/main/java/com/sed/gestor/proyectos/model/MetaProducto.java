@@ -1,8 +1,11 @@
 package com.sed.gestor.proyectos.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -24,89 +27,152 @@ public class MetaProducto {
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column (name = "codigo_programa", nullable = false, length = 50)
-    private String codigoPrograma;
-    
-    @Column (name = "descripcion_meta", nullable = false, length = 500)
-    private String descripcionMeta;
+    @Column (name = "codigo", nullable = false, length = 20)
+    private String codigo;
 
-    @Column (name = "unidad_medida", nullable = false, length = 100)
+    @Column (name = "descripcion", nullable = false, length = 500)
+    private String descripcion;
+
+    @Column (name = "linea_base")
+    private Double lineaBase;
+
+    @Column (name = "meta_cuatrienio")
+    private Double metaCuatrienio;
+
+    @Column (name = "unidad_medida", length = 50)
     private String unidadMedida;
 
-    @Column (name = "programacion_cuatrienio", precision = 12, scale = 2)
-    private BigDecimal programacionCuatrienio;
-
-    @Column (name = "programacion_vigencia", precision = 12, scale = 2)
-    private BigDecimal programacionVigencia;
-
-    @Column (name = "ponderacion", precision = 12, scale = 2)
-    private BigDecimal ponderacion;
-
     @ManyToOne (fetch = FetchType.LAZY)
-    @JoinColumn (name = "actividad_id", nullable = false)
-    private Actividad actividad;
+    @JoinColumn (name = "programa_id", nullable = false)
+    @JsonIgnoreProperties ("metasProducto")
+    private Programa programa;
 
+    @OneToMany (mappedBy = "metaProducto", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties ("metaProducto")
+    private List<Proyecto> proyectos = new ArrayList<>();
+    
     @OneToMany (mappedBy = "metaProducto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties ("metaProducto")
     private List<AvanceMeta> avances = new ArrayList<>();
 
     public MetaProducto(){
     }
-    public void addAvance(AvanceMeta avance){
+
+    public MetaProducto(String codigo, String descripcion, Double lineaBase, Double metaCuatrienio, String unidadMedida,
+            Programa programa) {
+        this.codigo = codigo;
+        this.descripcion = descripcion;
+        this.lineaBase = lineaBase;
+        this.metaCuatrienio = metaCuatrienio;
+        this.unidadMedida = unidadMedida;
+        this.programa = programa;
+    }
+
+    public void addProyecto(Proyecto proyecto) {
+        proyectos.add(proyecto);
+        proyecto.setMetaProducto(this);
+    }
+
+    public void removeProyecto(Proyecto proyecto) {
+        proyectos.remove(proyecto);
+        proyecto.setMetaProducto(null);
+    }
+
+    public void addAvance(AvanceMeta avance) {
         avances.add(avance);
         avance.setMetaProducto(this);
     }
+
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
-    public String getCodigoPrograma() {
-        return codigoPrograma;
+
+    public String getCodigo() {
+        return codigo;
     }
-    public void setCodigoPrograma(String codigoPrograma) {
-        this.codigoPrograma = codigoPrograma;
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
     }
-    public String getDescripcionMeta() {
-        return descripcionMeta;
+
+    public String getDescripcion() {
+        return descripcion;
     }
-    public void setDescripcionMeta(String descripcionMeta) {
-        this.descripcionMeta = descripcionMeta;
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
+
+    public Double getLineaBase() {
+        return lineaBase;
+    }
+
+    public void setLineaBase(Double lineaBase) {
+        this.lineaBase = lineaBase;
+    }
+
+    public Double getMetaCuatrienio() {
+        return metaCuatrienio;
+    }
+
+    public void setMetaCuatrienio(Double metaCuatrienio) {
+        this.metaCuatrienio = metaCuatrienio;
+    }
+
     public String getUnidadMedida() {
         return unidadMedida;
     }
+
     public void setUnidadMedida(String unidadMedida) {
         this.unidadMedida = unidadMedida;
     }
-    public BigDecimal getProgramacionCuatrienio() {
-        return programacionCuatrienio;
+
+    public Programa getPrograma() {
+        return programa;
     }
-    public void setProgramacionCuatrienio(BigDecimal programacionCuatrienio) {
-        this.programacionCuatrienio = programacionCuatrienio;
+
+    public void setPrograma(Programa programa) {
+        this.programa = programa;
     }
-    public BigDecimal getProgramacionVigencia() {
-        return programacionVigencia;
+
+    public List<Proyecto> getProyectos() {
+        return proyectos;
     }
-    public void setProgramacionVigencia(BigDecimal programacionVigencia) {
-        this.programacionVigencia = programacionVigencia;
+
+    public void setProyectos(List<Proyecto> proyectos) {
+        this.proyectos = proyectos;
     }
-    public BigDecimal getPonderacion() {
-        return ponderacion;
-    }
-    public void setPonderacion(BigDecimal ponderacion) {
-        this.ponderacion = ponderacion;
-    }
-    public Actividad getActividad() {
-        return actividad;
-    }
-    public void setActividad(Actividad actividad) {
-        this.actividad = actividad;
-    }
+
     public List<AvanceMeta> getAvances() {
         return avances;
     }
+
     public void setAvances(List<AvanceMeta> avances) {
         this.avances = avances;
+    }
+
+    //Metodos auxiliares
+    public BigDecimal getAvanceAcumulado() {
+        if (avances == null || avances.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return avances.stream()
+                .map(AvanceMeta::getValorLogrado)
+                .filter(v -> v != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal getPorcentajeAvance() {
+        if (metaCuatrienio == null || metaCuatrienio == 0) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal acumulado = getAvanceAcumulado();
+        BigDecimal meta = BigDecimal.valueOf(metaCuatrienio);
+        return acumulado.multiply(BigDecimal.valueOf(100))
+                .divide(meta, 2, RoundingMode.HALF_UP);
     }
 }

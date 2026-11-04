@@ -1,83 +1,157 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" 
-      th:replace="~{layout :: main-layout('Plan de Acción - Metas', ~{::section})}">
+      th:replace="~{layout :: main-layout('Seguimiento y Cumplimiento de Metas', ~{::section})}">
 <body>
 <section>
-    <h3 class="fw-bold mb-4"><i class="fa-solid fa-bullseye text-warning me-2"></i>Seguimiento Físico a Metas PDD</h3>
+    <!-- Cabecera con Selector de Proyecto y Vigencia -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h3 class="fw-bold mb-0"><i class="fa-solid fa-chart-line text-success me-2"></i>Seguimiento Físico de Metas PDD</h3>
+            <p class="text-muted mb-0">Reporte de cumplimiento de la Meta Producto asociada al proyecto</p>
+        </div>
+        <div>
+            <form method="get" action="/metas" class="d-flex gap-2 align-items-center">
+                <!-- Selector de Vigencia -->
+                <select name="vigencia" class="form-select fw-semibold" onchange="this.form.submit()" style="width: 150px;">
+                    <option value="2024" th:selected="${vigencia == 2024}">Vigencia 2024</option>
+                    <option value="2025" th:selected="${vigencia == 2025}">Vigencia 2025</option>
+                    <option value="2026" th:selected="${vigencia == 2026}">Vigencia 2026</option>
+                    <option value="2027" th:selected="${vigencia == 2027}">Vigencia 2027</option>
+                </select>
+                
+                <!-- Selector de Proyecto -->
+                <select name="proyectoId" class="form-select fw-semibold" onchange="this.form.submit()" style="min-width: 280px;">
+                    <option value="" disabled th:if="${proyectos == null or proyectos.isEmpty()}">No hay proyectos en esta vigencia</option>
+                    <option th:each="p : ${proyectos}" 
+                            th:value="${p.id}" 
+                            th:text="${p.nombre}" 
+                            th:selected="${proyecto != null and proyecto.id == p.id}">
+                        Proyecto
+                    </option>
+                </select>
+            </form>
+        </div>
+    </div>
 
-    <div class="row g-4">
-        <!-- Tabla de Metas -->
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Programa</th>
-                                    <th>Meta Producto PDD</th>
-                                    <th>Unidad</th>
-                                    <th>Programado 2026</th>
-                                    <th>% Cumplimiento</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="m, iter : ${resumenMetas}">
-                                    <td class="fw-bold text-muted" th:text="${metas[iter.index].codigoPrograma}">02-02-07</td>
-                                    <td th:text="${m.descripcionMeta}">Descripción</td>
-                                    <td th:text="${m.unidadMedida}">Número</td>
-                                    <td class="fw-bold" th:text="${m.metaProgramadaVigencia}">15</td>
-                                    <td>
-                                        <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar bg-warning text-dark fw-bold" 
-                                                 role="progressbar" 
-                                                 th:style="'width: ' + ${m.porcentajeAvanceSimple} + '%'"
-                                                 th:text="${m.porcentajeAvanceSimple + '%'}">0%</div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+    <!-- Alerta de Mensaje de Éxito -->
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i><span th:text="${mensajeExito}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Si no hay proyecto o meta asociada -->
+    <div th:if="${proyecto == null or metaProducto == null}" class="card shadow-sm p-4 text-center border-0 mb-4">
+        <i class="fa-solid fa-triangle-exclamation text-warning display-5 mb-3"></i>
+        <h5 class="fw-bold">Sin Meta Producto Asignada</h5>
+        <p class="text-muted mb-0">El proyecto seleccionado no tiene una Meta Producto asociada en la estructura del PDD.</p>
+    </div>
+
+    <!-- Tarjeta de la Meta Producto del Proyecto Seleccionado -->
+    <div th:if="${proyecto != null and metaProducto != null}" class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+            <div>
+                <span class="badge bg-info text-dark me-2" th:text="${metaProducto.codigo}">MP-01</span>
+                <strong class="fs-6" th:text="${metaProducto.descripcion}">Descripción de la Meta Producto</strong>
+            </div>
+            <button class="btn btn-success fw-bold btn-sm" data-bs-toggle="modal" data-bs-target="#modalReportarAvance">
+                <i class="fa-solid fa-plus-circle me-1"></i> Reportar Avance
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase fw-bold">Meta Cuatrienio</div>
+                    <div class="fs-5 fw-bold text-dark" th:text="${metaProducto.metaCuatrienio + ' ' + metaProducto.unidadMedida}">5000 Estudiantes</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase fw-bold">Avance Acumulado</div>
+                    <div class="fs-5 fw-bold text-success" th:text="${metaProducto.avanceAcumulado}">0</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="small text-muted text-uppercase fw-bold mb-1">% Cumplimiento</div>
+                    <div class="progress" style="height: 22px;">
+                        <div class="progress-bar bg-success fw-bold" role="progressbar" 
+                             th:style="'width: ' + ${metaProducto.porcentajeAvance} + '%'" 
+                             th:text="${metaProducto.porcentajeAvance + '%'}">0%</div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Formulario de Reporte Trimestral -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 p-3 bg-white">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-pen-to-square text-primary me-2"></i>Reportar Avance Trimestral</h5>
-                <form method="post" action="/metas/reportar">
-                    <div class="mb-3">
-                        <label class="form-label">Meta de Producto</label>
-                        <select name="metaProductoId" class="form-select" required>
-                            <option th:each="meta : ${metas}" th:value="${meta.id}" th:text="${meta.descripcionMeta}"></option>
-                        </select>
+    <!-- Historial de Avances Reportados -->
+    <div th:if="${metaProducto != null}" class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Historial de Reportes</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Vigencia</th>
+                            <th>Trimestre</th>
+                            <th>Valor Logrado</th>
+                            <th>Observaciones</th>
+                            <th>Fecha de Reporte</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${metaProducto.avances == null or metaProducto.avances.isEmpty()}">
+                            <td colspan="5" class="text-center text-muted py-3">No hay avances reportados para esta meta aún.</td>
+                        </tr>
+                        <tr th:each="av : ${metaProducto.avances}">
+                            <td class="fw-bold" th:text="${av.vigencia}">2026</td>
+                            <td><span class="badge bg-secondary" th:text="'T' + ${av.trimestre}">T1</span></td>
+                            <td class="text-success fw-bold" th:text="${av.valorLogrado}">100</td>
+                            <td class="small" th:text="${av.observaciones != null ? av.observaciones : 'Sin observaciones'}">Obs</td>
+                            <td class="small text-muted" th:text="${#temporals.format(av.fechaReporte, 'yyyy-MM-dd HH:mm')}">2026-10-20</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Reportar Avance -->
+    <div class="modal fade" id="modalReportarAvance" tabindex="-1" aria-hidden="true" th:if="${metaProducto != null}">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{/metas/reportar}" method="post">
+                    <input type="hidden" name="metaProductoId" th:value="${metaProducto.id}" />
+                    <input type="hidden" name="proyectoId" th:value="${proyecto.id}" />
+                    
+                    <div class="modal-header">
+                        <h5 class="modal-header-title fw-bold"><i class="fa-solid fa-chart-line text-success me-2"></i>Reportar Avance Físico</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label">Trimestre</label>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Vigencia</label>
+                            <input type="number" name="vigencia" class="form-control" th:value="${vigencia}" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Trimestre</label>
                             <select name="trimestre" class="form-select" required>
-                                <option value="1">Trimestre 1 (Marzo)</option>
-                                <option value="2" selected>Trimestre 2 (Junio)</option>
-                                <option value="3">Trimestre 3 (Septiembre)</option>
-                                <option value="4">Trimestre 4 (Diciembre)</option>
+                                <option value="1">Trimestre 1 (T1)</option>
+                                <option value="2">Trimestre 2 (T2)</option>
+                                <option value="3">Trimestre 3 (T3)</option>
+                                <option value="4">Trimestre 4 (T4)</option>
                             </select>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label">Vigencia</label>
-                            <input type="number" name="vigencia" class="form-control" value="2026" required>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Valor Logrado</label>
+                            <input type="number" step="0.01" name="valorLogrado" class="form-control" placeholder="Ej. 150" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Observaciones</label>
+                            <textarea name="observaciones" class="form-control" rows="3" placeholder="Detalles o soporte del avance..."></textarea>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Valor Logrado en este Trimestre</label>
-                        <input type="number" step="0.01" name="valorLogrado" class="form-control" placeholder="Ej: 5" required>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success fw-bold">Guardar Reporte</button>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Observaciones / Soporte</label>
-                        <textarea name="observaciones" class="form-control" rows="2" placeholder="Notas sobre el avance..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-warning w-100 fw-bold">Registrar Avance Físico</button>
                 </form>
             </div>
         </div>

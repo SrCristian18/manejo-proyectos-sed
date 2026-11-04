@@ -1,59 +1,20 @@
 package com.sed.gestor.proyectos.dto;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DashboardProyectoDTO {
-    private String codigoBpin;
-    private String nombreProyecto;
-    private BigDecimal presupuestoApropiadoTotal;
-    private BigDecimal presupuestoEjecutadoTotal;
-    private BigDecimal porcentajeEjecucionFinanciera;
-    private BigDecimal porcentajeAvanceFisicoPromedio;
-    private List<MetaAvanceDTO> resumenMetas;
 
-    public DashboardProyectoDTO(){
+    private BigDecimal porcentajeAvanceFisicoPromedio = BigDecimal.ZERO;
+    private List<MetaResumenDTO> resumenMetas = new ArrayList<>();
 
+    public DashboardProyectoDTO() {
     }
 
-    public String getCodigoBpin() {
-        return codigoBpin;
-    }
-
-    public void setCodigoBpin(String codigoBpin) {
-        this.codigoBpin = codigoBpin;
-    }
-
-    public String getNombreProyecto() {
-        return nombreProyecto;
-    }
-
-    public void setNombreProyecto(String nombreProyecto) {
-        this.nombreProyecto = nombreProyecto;
-    }
-
-    public BigDecimal getPresupuestoApropiadoTotal() {
-        return presupuestoApropiadoTotal;
-    }
-
-    public void setPresupuestoApropiadoTotal(BigDecimal presupuestoApropiadoTotal) {
-        this.presupuestoApropiadoTotal = presupuestoApropiadoTotal;
-    }
-
-    public BigDecimal getPresupuestoEjecutadoTotal() {
-        return presupuestoEjecutadoTotal;
-    }
-
-    public void setPresupuestoEjecutadoTotal(BigDecimal presupuestoEjecutadoTotal) {
-        this.presupuestoEjecutadoTotal = presupuestoEjecutadoTotal;
-    }
-
-    public BigDecimal getPorcentajeEjecucionFinanciera() {
-        return porcentajeEjecucionFinanciera;
-    }
-
-    public void setPorcentajeEjecucionFinanciera(BigDecimal porcentajeEjecucionFinanciera) {
-        this.porcentajeEjecucionFinanciera = porcentajeEjecucionFinanciera;
+    public DashboardProyectoDTO(BigDecimal porcentajeAvanceFisicoPromedio, List<MetaResumenDTO> resumenMetas) {
+        this.porcentajeAvanceFisicoPromedio = porcentajeAvanceFisicoPromedio;
+        this.resumenMetas = resumenMetas;
     }
 
     public BigDecimal getPorcentajeAvanceFisicoPromedio() {
@@ -64,12 +25,41 @@ public class DashboardProyectoDTO {
         this.porcentajeAvanceFisicoPromedio = porcentajeAvanceFisicoPromedio;
     }
 
-    public List<MetaAvanceDTO> getResumenMetas() {
+    public List<MetaResumenDTO> getResumenMetas() {
         return resumenMetas;
     }
 
-    public void setResumenMetas(List<MetaAvanceDTO> resumenMetas) {
+    public void setResumenMetas(List<MetaResumenDTO> resumenMetas) {
         this.resumenMetas = resumenMetas;
     }
 
+    // Clase interna para el detalle de avance de cada meta en el gráfico/tabla
+    public static class MetaResumenDTO {
+        private String descripcionMeta;
+        private BigDecimal porcentajeAvanceSimple = BigDecimal.ZERO;
+
+        public MetaResumenDTO() {
+        }
+
+        public MetaResumenDTO(String descripcionMeta, BigDecimal porcentajeAvanceSimple) {
+            this.descripcionMeta = descripcionMeta;
+            this.porcentajeAvanceSimple = porcentajeAvanceSimple;
+        }
+
+        public String getDescripcionMeta() {
+            return descripcionMeta;
+        }
+
+        public void setDescripcionMeta(String descripcionMeta) {
+            this.descripcionMeta = descripcionMeta;
+        }
+
+        public BigDecimal getPorcentajeAvanceSimple() {
+            return porcentajeAvanceSimple;
+        }
+
+        public void setPorcentajeAvanceSimple(BigDecimal porcentajeAvanceSimple) {
+            this.porcentajeAvanceSimple = porcentajeAvanceSimple;
+        }
+    }
 }

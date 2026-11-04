@@ -1,17 +1,24 @@
 package com.sed.gestor.proyectos.model;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 
@@ -26,27 +33,46 @@ public class Actividad {
     @Column (name = "nombre", nullable = false, length = 500)
     private String nombre;
 
-    @Column (name = "fecha_inicio")
-    private LocalDate fechaInicio;
+    @Column (name = "presupuesto_inicial", precision = 15, scale = 2)
+    private BigDecimal presupuestoInicial = BigDecimal.ZERO;
 
-    @Column (name = "fecha_final")
-    private LocalDate fechaFinal;
+    @Enumerated (EnumType.STRING)
+    @Column (name = "fuente", length = 50)
+    private FuenteFinanciacion fuente;
+
+    @Column (name = "descripcion", length = 1000)
+    private String descripcion;
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "proyecto_id", nullable = false)
     @JsonIgnoreProperties ("actividades")
     private Proyecto proyecto;
 
-    public Actividad()
-    {
+    @OneToMany (mappedBy = "actividad", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties ("actividad")
+    private List<RubroGasto> rubros = new ArrayList<>();
 
+    public Actividad(){
+    
     }
 
-    public Actividad(String nombre, LocalDate fechaInicio, LocalDate fechaFinal, Proyecto proyecto) {
+    public Actividad(String nombre, BigDecimal presupuestoInicial, FuenteFinanciacion fuente, String descripcion,
+            Proyecto proyecto) {
         this.nombre = nombre;
-        this.fechaInicio = fechaInicio;
-        this.fechaFinal = fechaFinal;
+        this.presupuestoInicial = presupuestoInicial;
+        this.fuente = fuente;
+        this.descripcion = descripcion;
         this.proyecto = proyecto;
+    }
+
+    public void addRubro(RubroGasto rubro){
+        rubros.add(rubro);
+        rubro.setActividad(this);
+    }
+
+    public void removeRubro(RubroGasto rubro) {
+        rubros.remove(rubro);
+        rubro.setActividad(null);
     }
 
     public Long getId() {
@@ -57,14 +83,6 @@ public class Actividad {
         this.id = id;
     }
 
-    public Proyecto getProyecto() {
-        return proyecto;
-    }
-
-    public void setProyecto(Proyecto proyecto) {
-        this.proyecto = proyecto;
-    }
-
     public String getNombre() {
         return nombre;
     }
@@ -73,20 +91,44 @@ public class Actividad {
         this.nombre = nombre;
     }
 
-    public LocalDate getFechaInicio() {
-        return fechaInicio;
+    public BigDecimal getPresupuestoInicial() {
+        return presupuestoInicial;
     }
 
-    public void setFechaInicio(LocalDate fechaInicio) {
-        this.fechaInicio = fechaInicio;
+    public void setPresupuestoInicial(BigDecimal presupuestoInicial) {
+        this.presupuestoInicial = presupuestoInicial;
     }
 
-    public LocalDate getFechaFinal() {
-        return fechaFinal;
+    public FuenteFinanciacion getFuente() {
+        return fuente;
     }
 
-    public void setFechaFinal(LocalDate fechaFinal) {
-        this.fechaFinal = fechaFinal;
+    public void setFuente(FuenteFinanciacion fuente) {
+        this.fuente = fuente;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public Proyecto getProyecto() {
+        return proyecto;
+    }
+
+    public void setProyecto(Proyecto proyecto) {
+        this.proyecto = proyecto;
+    }
+
+    public List<RubroGasto> getRubros() {
+        return rubros;
+    }
+
+    public void setRubros(List<RubroGasto> rubros) {
+        this.rubros = rubros;
     }
 
 }
