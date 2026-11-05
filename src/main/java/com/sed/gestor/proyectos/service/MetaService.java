@@ -1,12 +1,18 @@
 package com.sed.gestor.proyectos.service;
 
+import com.sed.gestor.proyectos.dto.ActividadAvanceDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO.MetaResumenDTO;
 import com.sed.gestor.proyectos.dto.MetaProductoDTO;
+import com.sed.gestor.proyectos.dto.ReporteTrimestralProyectoFormDTO;
+import com.sed.gestor.proyectos.model.Actividad;
+import com.sed.gestor.proyectos.model.AvanceActividad;
 import com.sed.gestor.proyectos.model.AvanceMeta;
 import com.sed.gestor.proyectos.model.MetaProducto;
 import com.sed.gestor.proyectos.model.Programa;
 import com.sed.gestor.proyectos.model.Proyecto;
+import com.sed.gestor.proyectos.repository.ActividadRepository;
+import com.sed.gestor.proyectos.repository.AvanceActividadRepository;
 import com.sed.gestor.proyectos.repository.AvanceMetaRepository;
 import com.sed.gestor.proyectos.repository.MetaProductoRepository;
 import com.sed.gestor.proyectos.repository.ProgramaRepository;
@@ -23,6 +29,8 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class MetaService {
@@ -31,14 +39,19 @@ public class MetaService {
     private final ProgramaRepository programaRepository;
     private final AvanceMetaRepository avanceMetaRepository;
     private final ProyectoRepository proyectoRepository;
+    private final ActividadRepository actividadRepository;
+    private final AvanceActividadRepository avanceActividadRepository;
 
     @Autowired 
     public MetaService(MetaProductoRepository metaProductoRepository, ProgramaRepository programaRepository,
-        AvanceMetaRepository avanceMetaRepository, ProyectoRepository proyectoRepository) {
+        AvanceMetaRepository avanceMetaRepository, ProyectoRepository proyectoRepository, ActividadRepository actividadRepository,
+        AvanceActividadRepository avanceActividadRepository) {
         this.metaProductoRepository = metaProductoRepository;
         this.programaRepository = programaRepository;
         this.avanceMetaRepository = avanceMetaRepository;
         this.proyectoRepository = proyectoRepository;
+        this.actividadRepository = actividadRepository;
+        this.avanceActividadRepository = avanceActividadRepository;
     }
 
     //Dashboard
@@ -128,4 +141,82 @@ public class MetaService {
 
         return avanceMetaRepository.save(avance);
     }
+
+    //nuevo
+    @Transactional(readOnly = true)
+    public ReporteTrimestralProyectoFormDTO obtenerFormularioReporteProyecto(Long proyectoId, Integer vigencia, Integer trimestre) {
+        Proyecto proyecto = proyectoRepository.findById(proyectoId)
+                .orElseThrow(() -> new EntityNotFoundException("Proyecto no encontrado con ID: " + proyectoId));
+
+        ReporteTrimestralProyectoFormDTO form = new ReporteTrimestralProyectoFormDTO();
+        form.setProyectoId(proyectoId);
+        form.setVigencia(vigencia);
+        form.setTrimestre(trimestre);
+
+        if (proyecto.getMetaProducto() != null) {
+            form.setMetaProductoId(proyecto.getMetaProducto().getId());
+        }
+
+        // Cargar las actividades asociadas al proyecto
+        List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoId);
+        
+        // Buscar avances existentes de actividades para la vigencia y trimestre indicados
+        List<AvanceActividad> avancesExistentes = avanceActividadRepository
+                .findByActividadProyectoIdAndVigenciaAndTrimestre(proyectoId, vigencia, trimestre);
+
+        Map<Long, AvanceActividad> mapaAvances = avancesExistentes.stream()
+                .collect(Collectors.toMap(a -> a.getActividad().getId(), a -> a));
+
+        List<ActividadAvanceDTO> actividadesDTO = actividades.stream().map(act -> {
+            AvanceActividad av = mapaAvances.get(act.getId());
+            ActividadAvanceDTO dto = new ActividadAvanceDTO();
+            dto.setActividadId(act.getId());
+            dto.setDescripcion(act.getDescripcion());
+            if (av != null) {
+                dto.setAvanceFisico(av.getAvanceFisico());
+                dto.setObservaciones(av.getObservaciones());
+            }
+            return dto;
+        }).collect(Collectors.toList());
+
+        form.setActividades(actividadesDTO);
+        return form;
+    }
+
+    @Transactional
+    public void guardarReporteTrimestralCompleto(ReporteTrimestralProyectoFormDTO form) {
+        // 1. Guardar avance de la meta del proyecto si se proporcionó valor
+        if (form.getMetaProductoId() != null && form.getAvanceLogradoMeta() != null) {
+            registrarAvance(
+                form.getMetaProductoId(),
+                form.getTrimestre(),
+                form.getVigencia(),
+                form.getAvanceLogradoMeta(),
+                form.getObservacionesMeta()
+            );
+        }
+
+        // 2. Guardar o actualizar avance individual de cada actividad
+        if (form.getActividades() != null) {
+            for (ActividadAvanceDTO actDTO : form.getActividades()) {
+                if (actDTO.getActividadId() == null) continue;
+
+                AvanceActividad avance = avanceActividadRepository
+                        .findByActividadIdAndVigenciaAndTrimestre(actDTO.getActividadId(), form.getVigencia(), form.getTrimestre())
+                        .orElseGet(() -> {
+                            AvanceActividad nuevo = new AvanceActividad();
+                            Actividad act = actividadRepository.getReferenceById(actDTO.getActividadId());
+                            nuevo.setActividad(act);
+                            nuevo.setVigencia(form.getVigencia());
+                            nuevo.setTrimestre(form.getTrimestre());
+                            return nuevo;
+                        });
+
+                avance.setAvanceFisico(actDTO.getAvanceFisico());
+                avance.setObservaciones(actDTO.getObservaciones());
+                avanceActividadRepository.save(avance);
+            }
+        }
+    }
+
 }
