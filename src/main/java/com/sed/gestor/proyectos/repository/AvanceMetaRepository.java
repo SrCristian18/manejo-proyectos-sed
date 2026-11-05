@@ -11,5 +11,5 @@ import com.sed.gestor.proyectos.model.AvanceMeta;
 @Repository 
 public interface AvanceMetaRepository extends JpaRepository<AvanceMeta, Long>{
     List<AvanceMeta> findByMetaProductoIdOrderByVigenciaDescTrimestreDesc(Long metaProductoId);
-    Optional<AvanceMeta> findByMetaProductoIdAndVigenciaAndTrimestre(Long metaProductoId, Integer vigencia, Integer trimestre);
+    Optional<AvanceMeta> findByMetaProductoIdAndVigenciaAndMes(Long metaProductoId, Integer vigencia, Integer mes);
 }

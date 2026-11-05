@@ -5,6 +5,7 @@ import com.sed.gestor.proyectos.dto.MetaProductoDTO;
 import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
 import com.sed.gestor.proyectos.dto.ProyectoDTO;
+import com.sed.gestor.proyectos.dto.ReporteTrimestralProyectoFormDTO;
 import com.sed.gestor.proyectos.dto.SolicitudActualizacionDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.LineaEstrategica;
@@ -237,22 +238,29 @@ public class WebController {
     //Procesar Formulario Web de Avance de Metas
     @PostMapping("/metas/reportar")
     public String reportarAvanceMeta(@RequestParam Long metaProductoId,
-                                     @RequestParam Integer trimestre,
+                                     @RequestParam Integer mes,
                                      @RequestParam Integer vigencia,
                                      @RequestParam BigDecimal valorLogrado,
                                      @RequestParam (required = false) String observaciones,
                                      @RequestParam (required = false) Long proyectoId,
                                      RedirectAttributes redirectAttributes) {
-        metaService.registrarAvance(metaProductoId, trimestre, vigencia, valorLogrado, observaciones);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Avance registrado exitosamente.");
+        metaService.registrarAvance(metaProductoId, mes, vigencia, valorLogrado, observaciones);
+        redirectAttributes.addFlashAttribute("mensajeExito", "Avance reportado correctamente para el mes "+ mes + ".");
 
-        String redirectUrl = "redirect:/metas?vigencia=" + vigencia;
-        if(proyectoId != null){
-            redirectUrl += "&proyectoId=" + proyectoId;
-        }
-        return redirectUrl;
+        return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
     }
+/* 
+    @PostMapping("/metas/reportar")
+    public String reportarAvanceCompleto(
+            @ModelAttribute ReporteTrimestralProyectoFormDTO form,
+            RedirectAttributes redirectAttributes) {
 
+        metaService.guardarReporteTrimestralCompleto(form);
+
+        redirectAttributes.addFlashAttribute("mensajeExito", "Reporte guardado exitosamente.");
+        return "redirect:/metas?proyectoId=" + form.getProyectoId() + "&vigencia=" + form.getVigencia();
+    }
+*/
     //Proyectos
     @GetMapping ("/proyectos")
     public String listarProyectos(@RequestParam (defaultValue = "2026") Integer vigencia, Model model){

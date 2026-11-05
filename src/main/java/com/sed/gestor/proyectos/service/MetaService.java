@@ -134,10 +134,18 @@ public class MetaService {
     }
 
     //Avances e informacion
-    public AvanceMeta registrarAvance(Long metaProductoId, Integer trimestre, Integer vigencia, BigDecimal valorLogrado, String observaciones){
+    public AvanceMeta registrarAvance(Long metaProductoId, Integer mes, Integer vigencia, BigDecimal valorLogrado, String observaciones){
         MetaProducto metaProducto = obtenerMetaProductoPorId(metaProductoId);
-        AvanceMeta avance = new AvanceMeta(trimestre, vigencia, valorLogrado, observaciones, LocalDateTime.now(), metaProducto);
-        metaProducto.addAvance(avance);
+        
+        AvanceMeta avance = avanceMetaRepository.findByMetaProductoIdAndVigenciaAndMes(metaProductoId, vigencia, mes)
+            .orElseGet(() -> new AvanceMeta());
+
+        avance.setMetaProducto(metaProducto);
+        avance.setVigencia(vigencia);
+        avance.setMes(mes);
+        avance.setValorLogrado(valorLogrado);
+        avance.setObservaciones(observaciones);
+        avance.setFechaReporte(LocalDateTime.now());
 
         return avanceMetaRepository.save(avance);
     }

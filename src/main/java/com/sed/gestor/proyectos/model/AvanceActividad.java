@@ -21,6 +21,9 @@ public class AvanceActividad {
     @Column(nullable = false)
     private Integer vigencia;
 
+    @Column (name = "mes")
+    private Integer mes;
+
     @Column(nullable = false)
     private Integer trimestre;
 
@@ -33,11 +36,12 @@ public class AvanceActividad {
     public AvanceActividad() {
     }
 
-    public AvanceActividad(Long id, Actividad actividad, Integer vigencia, Integer trimestre, BigDecimal avanceFisico, String observaciones) {
+    public AvanceActividad(Long id, Actividad actividad, Integer vigencia, Integer mes, BigDecimal avanceFisico,
+            String observaciones) {
         this.id = id;
         this.actividad = actividad;
         this.vigencia = vigencia;
-        this.trimestre = trimestre;
+        this.mes = mes;
         this.avanceFisico = avanceFisico;
         this.observaciones = observaciones;
     }
@@ -101,5 +105,16 @@ public class AvanceActividad {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    public Integer getMes() {
+        return mes;
+    }
+
+    public void setMes(Integer mes) {
+        this.mes = mes;
+        if (mes != null){
+            this.trimestre = ((mes - 1)/3)+1;
+        }
     }
 }

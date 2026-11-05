@@ -23,6 +23,9 @@ public class AvanceMeta {
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @Column (name = "mes")
+    private Integer mes;
+
     @Column (name = "trimestre", nullable = false)
     private Integer trimestre;
 
@@ -46,9 +49,9 @@ public class AvanceMeta {
     public AvanceMeta(){
     }
 
-    public AvanceMeta(Integer trimestre, Integer vigencia, BigDecimal valorLogrado, String observaciones,
+    public AvanceMeta(Integer mes, Integer vigencia, BigDecimal valorLogrado, String observaciones,
             LocalDateTime fechaReporte, MetaProducto metaProducto) {
-        this.trimestre = trimestre;
+        this.mes = mes;
         this.vigencia = vigencia;
         this.valorLogrado = valorLogrado;
         this.observaciones = observaciones;
@@ -62,14 +65,6 @@ public class AvanceMeta {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Integer getTrimestre() {
-        return trimestre;
-    }
-
-    public void setTrimestre(Integer trimestre) {
-        this.trimestre = trimestre;
     }
 
     public Integer getVigencia() {
@@ -110,5 +105,20 @@ public class AvanceMeta {
 
     public void setMetaProducto(MetaProducto metaProducto) {
         this.metaProducto = metaProducto;
+    }
+
+    public Integer getMes() {
+        return mes;
+    }
+
+    public void setMes(Integer mes) {
+        this.mes = mes;
+        if(mes != null){
+            this.trimestre = ((mes - 1) / 3) + 1;
+        }
+    }
+
+    public Integer getTrimestre() {
+        return trimestre;
     }
 }
