@@ -1,11 +1,11 @@
 package com.sed.gestor.proyectos.controller;
 
+import com.sed.gestor.proyectos.dto.ActividadResumenDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
 import com.sed.gestor.proyectos.dto.MetaProductoDTO;
 import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
 import com.sed.gestor.proyectos.dto.ProyectoDTO;
-import com.sed.gestor.proyectos.dto.ReporteTrimestralProyectoFormDTO;
 import com.sed.gestor.proyectos.dto.SolicitudActualizacionDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.LineaEstrategica;
@@ -204,17 +204,19 @@ public class WebController {
             }
 
             MetaProducto metaProductoAsociada = proyectoSeleccionado.getMetaProducto();
-            List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
             DashboardProyectoDTO resumen = metaService.obtenerResumenDashboard(proyectoSeleccionado.getId(), vigencia);
+            
+            // Cargar actividades del proyecto transformadas con métricas acumuladas (% avance)
+            List<ActividadResumenDTO> actividadesResumen = metaService.obtenerResumenActividadesProyecto(proyectoSeleccionado.getId(), vigencia);
 
             model.addAttribute("proyecto", proyectoSeleccionado);
             model.addAttribute("metaProducto", metaProductoAsociada);
-            model.addAttribute("actividades", actividades);
+            model.addAttribute("actividadesResumen", actividadesResumen);
             model.addAttribute("resumenMetas", resumen != null ? resumen.getResumenMetas() : new ArrayList<>());
         } else {
             model.addAttribute("proyecto", null);
             model.addAttribute("metaProducto", null);
-            model.addAttribute("actividades", new ArrayList<>());
+            model.addAttribute("actividadesResumen", new ArrayList<>());
             model.addAttribute("resumenMetas", new ArrayList<>());
         }
 
@@ -243,24 +245,31 @@ public class WebController {
                                      @RequestParam BigDecimal valorLogrado,
                                      @RequestParam (required = false) String observaciones,
                                      @RequestParam (required = false) Long proyectoId,
+                                     @RequestParam (required = false) List<Long> actividadIds,
+                                     @RequestParam (required = false) List<BigDecimal> avancesFisicos,
+                                     @RequestParam (required = false) List<String> observacionesActividades,
                                      RedirectAttributes redirectAttributes) {
+        
+        // 1. Guardar Avance de la Meta Producto
         metaService.registrarAvance(metaProductoId, mes, vigencia, valorLogrado, observaciones);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Avance reportado correctamente para el mes "+ mes + ".");
 
+        // 2. Guardar Avances de cada Actividad si se enviaron valores
+        if (actividadIds != null && avancesFisicos != null) {
+            for (int i = 0; i < actividadIds.size(); i++) {
+                Long actId = actividadIds.get(i);
+                BigDecimal avanceVal = (i < avancesFisicos.size()) ? avancesFisicos.get(i) : null;
+                String obsAct = (observacionesActividades != null && i < observacionesActividades.size()) 
+                        ? observacionesActividades.get(i) : null;
+
+                if (actId != null && avanceVal != null) {
+                    metaService.registrarAvanceActividad(actId, mes, vigencia, avanceVal, obsAct);
+                }
+            }
+        }
+        redirectAttributes.addFlashAttribute("mensajeExito", "Avances reportados correctamente para el mes " + mes + ".");
         return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
     }
-/* 
-    @PostMapping("/metas/reportar")
-    public String reportarAvanceCompleto(
-            @ModelAttribute ReporteTrimestralProyectoFormDTO form,
-            RedirectAttributes redirectAttributes) {
 
-        metaService.guardarReporteTrimestralCompleto(form);
-
-        redirectAttributes.addFlashAttribute("mensajeExito", "Reporte guardado exitosamente.");
-        return "redirect:/metas?proyectoId=" + form.getProyectoId() + "&vigencia=" + form.getVigencia();
-    }
-*/
     //Proyectos
     @GetMapping ("/proyectos")
     public String listarProyectos(@RequestParam (defaultValue = "2026") Integer vigencia, Model model){

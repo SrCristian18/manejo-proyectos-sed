@@ -43,6 +43,12 @@ public class Actividad {
     @Column (name = "descripcion", length = 1000)
     private String descripcion;
 
+    @Column (name = "meta_cuatrienio", precision = 12, scale = 2)
+    private BigDecimal metaCuatrienio = BigDecimal.ZERO;
+
+    @Column (name = "unidad_medida", length = 100)
+    private String unidadMedida;
+
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "proyecto_id", nullable = false)
     @JsonIgnoreProperties ("actividades")
@@ -51,6 +57,10 @@ public class Actividad {
     @OneToMany (mappedBy = "actividad", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties ("actividad")
     private List<RubroGasto> rubros = new ArrayList<>();
+
+    @OneToMany (mappedBy = "actividad", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties ("actividad")
+    private List<AvanceActividad> avances = new ArrayList<>();
 
     public Actividad(){
     
@@ -73,6 +83,11 @@ public class Actividad {
     public void removeRubro(RubroGasto rubro) {
         rubros.remove(rubro);
         rubro.setActividad(null);
+    }
+
+    public void addAvance(AvanceActividad avance) {
+        avances.add(avance);
+        avance.setActividad(this);
     }
 
     public Long getId() {
@@ -115,6 +130,22 @@ public class Actividad {
         this.descripcion = descripcion;
     }
 
+    public BigDecimal getMetaCuatrienio() {
+        return metaCuatrienio;
+    }
+
+    public void setMetaCuatrienio(BigDecimal metaCuatrienio) {
+        this.metaCuatrienio = metaCuatrienio;
+    }
+
+    public String getUnidadMedida() {
+        return unidadMedida;
+    }
+
+    public void setUnidadMedida(String unidadMedida) {
+        this.unidadMedida = unidadMedida;
+    }
+
     public Proyecto getProyecto() {
         return proyecto;
     }
@@ -131,4 +162,11 @@ public class Actividad {
         this.rubros = rubros;
     }
 
+    public List<AvanceActividad> getAvances() {
+        return avances;
+    }
+
+    public void setAvances(List<AvanceActividad> avances) {
+        this.avances = avances;
+    }
 }

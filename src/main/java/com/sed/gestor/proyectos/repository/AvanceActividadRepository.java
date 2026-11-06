@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface AvanceActividadRepository extends JpaRepository<AvanceActividad, Long> {
 
     List<AvanceActividad> findByActividadProyectoIdAndVigenciaAndTrimestre(Long proyectoId, Integer vigencia, Integer trimestre);
-
     Optional<AvanceActividad> findByActividadIdAndVigenciaAndTrimestre(Long actividadId, Integer vigencia, Integer trimestre);
+    List<AvanceActividad> findByActividadProyectoIdAndVigencia(Long proyectoId, Integer vigencia);
+    Optional<AvanceActividad> findByActividadIdAndVigenciaAndMes(Long actividadId, Integer vigencia, Integer mes);
 }

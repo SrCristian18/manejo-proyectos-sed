@@ -61,9 +61,15 @@ VALUES
 (1, '2026130010001', 'Proyecto de Fortalecimiento de la Educación Superior', 2026, 1),
 (2, '2024130010250', 'Generación de Oportunidades de Acceso y Permanencia a la Educación para el Trabajo y el Desarrollo Humano para Egresados del Sistema', 2024, 6);
 
--- 8. ACTIVIDADES
-INSERT IGNORE INTO actividades (id, nombre, presupuesto_inicial, fuente, descripcion, proyecto_id)
+-- 8. ACTIVIDADES (Actualizadas con meta_cuatrienio y unidad_medida)
+INSERT IGNORE INTO actividades (id, nombre, presupuesto_inicial, fuente, descripcion, meta_cuatrienio, unidad_medida, proyecto_id)
 VALUES 
-(1, 'Convocatoria y asignación de créditos condonables', 1500000000.00, 'LIBRE_DESTINACION', 'Asignación de aportes para matrícula', 1),
-(2, 'Organización de procesos de acompañamiento a la SED y a las IETDH para garantizar la entrega de becas a los beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', ' ', 2),
-(3, 'Entregar becas de educación para el trabajo y el desarrollo humano a beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', ' ', 2);
+(1, 'Convocatoria y asignación de créditos condonables', 1500000000.00, 'LIBRE_DESTINACION', 'Asignación de aportes para matrícula', 2000.00, 'Aportes', 1),
+(2, 'Organización de procesos de acompañamiento a la SED y a las IETDH para garantizar la entrega de becas a los beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', 'Acompañamiento a beneficiarios', 500.00, 'Estudiantes', 2),
+(3, 'Entregar becas de educación para el trabajo y el desarrollo humano a beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', 'Entrega efectiva de becas ETDH', 500.00, 'Becas', 2);
+
+-- 9. EJEMPLO DE AVANCES DE ACTIVIDADES POR MES (Opcional)
+-- INSERT IGNORE INTO avance_actividad (id, actividad_id, vigencia, mes, trimestre, avance_fisico, observaciones)
+-- VALUES 
+-- (1, 1, 2026, 1, 1, 150.00, 'Primer cohorte asignada en Enero'),
+-- (2, 1, 2026, 2, 1, 300.00, 'Segunda cohorte asignada en Febrero');

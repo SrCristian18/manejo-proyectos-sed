@@ -2,11 +2,12 @@ package com.sed.gestor.proyectos.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
 @Table(name = "avance_actividad", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"actividad_id", "vigencia", "trimestre"})
+    @UniqueConstraint(columnNames = {"actividad_id", "vigencia", "mes"})
 })
 public class AvanceActividad {
 
@@ -32,6 +33,9 @@ public class AvanceActividad {
 
     @Column(columnDefinition = "TEXT")
     private String observaciones;
+
+    @Column (name = "fecha_reporte")
+    private LocalDateTime fechaReporte;
 
     public AvanceActividad() {
     }
@@ -116,5 +120,13 @@ public class AvanceActividad {
         if (mes != null){
             this.trimestre = ((mes - 1)/3)+1;
         }
+    }
+
+    public LocalDateTime getFechaReporte() {
+        return fechaReporte;
+    }
+
+    public void setFechaReporte(LocalDateTime fechaReporte) {
+        this.fechaReporte = fechaReporte;
     }
 }

@@ -1,6 +1,7 @@
 package com.sed.gestor.proyectos.service;
 
 import com.sed.gestor.proyectos.dto.ActividadAvanceDTO;
+import com.sed.gestor.proyectos.dto.ActividadResumenDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO.MetaResumenDTO;
 import com.sed.gestor.proyectos.dto.MetaProductoDTO;
@@ -150,6 +151,72 @@ public class MetaService {
         return avanceMetaRepository.save(avance);
     }
 
+@Transactional
+    public AvanceActividad registrarAvanceActividad(Long actividadId, Integer mes, Integer vigencia, BigDecimal avanceFisico, String observaciones) {
+        Actividad actividad = actividadRepository.findById(actividadId)
+                .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada con ID: " + actividadId));
+
+        AvanceActividad avance = avanceActividadRepository.findByActividadIdAndVigenciaAndMes(actividadId, vigencia, mes)
+                .orElseGet(() -> {
+                    AvanceActividad nuevo = new AvanceActividad();
+                    nuevo.setActividad(actividad);
+                    return nuevo;
+                });
+
+        avance.setVigencia(vigencia);
+        avance.setMes(mes);
+        avance.setAvanceFisico(avanceFisico);
+        avance.setObservaciones(observaciones);
+        avance.setFechaReporte(LocalDateTime.now());
+
+        return avanceActividadRepository.save(avance);
+    }
+
+    //barras de progreso
+    @Transactional(readOnly = true)
+    public List<ActividadResumenDTO> obtenerResumenActividadesProyecto(Long proyectoId, Integer vigencia) {
+        List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoId);
+        List<ActividadResumenDTO> resumenes = new ArrayList<>();
+
+        for (Actividad act : actividades) {
+            BigDecimal acumulado = BigDecimal.ZERO;
+            List<AvanceActividad> avancesFiltrados = new ArrayList<>();
+
+            if (act.getAvances() != null && !act.getAvances().isEmpty()) {
+                for (AvanceActividad av : act.getAvances()) {
+                    if (vigencia == null || av.getVigencia().equals(vigencia)) {
+                        avancesFiltrados.add(av);
+                        if (av.getAvanceFisico() != null) {
+                            acumulado = acumulado.add(av.getAvanceFisico());
+                        }
+                    }
+                }
+            }
+
+            BigDecimal meta = act.getMetaCuatrienio() != null ? act.getMetaCuatrienio() : BigDecimal.ZERO;
+            BigDecimal porcentajeAvance = BigDecimal.ZERO;
+
+            if (meta.compareTo(BigDecimal.ZERO) > 0) {
+                porcentajeAvance = acumulado.multiply(BigDecimal.valueOf(100))
+                        .divide(meta, 2, RoundingMode.HALF_UP);
+            }
+
+            ActividadResumenDTO dto = new ActividadResumenDTO(
+                    act.getId(),
+                    act.getNombre(),
+                    act.getDescripcion(),
+                    meta,
+                    act.getUnidadMedida() != null ? act.getUnidadMedida() : "Unidades",
+                    acumulado,
+                    porcentajeAvance
+            );
+            dto.setAvances(avancesFiltrados);
+            resumenes.add(dto);
+        }
+
+        return resumenes;
+    }
+
     //nuevo
     @Transactional(readOnly = true)
     public ReporteTrimestralProyectoFormDTO obtenerFormularioReporteProyecto(Long proyectoId, Integer vigencia, Integer trimestre) {
@@ -165,10 +232,7 @@ public class MetaService {
             form.setMetaProductoId(proyecto.getMetaProducto().getId());
         }
 
-        // Cargar las actividades asociadas al proyecto
         List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoId);
-        
-        // Buscar avances existentes de actividades para la vigencia y trimestre indicados
         List<AvanceActividad> avancesExistentes = avanceActividadRepository
                 .findByActividadProyectoIdAndVigenciaAndTrimestre(proyectoId, vigencia, trimestre);
 
@@ -179,6 +243,7 @@ public class MetaService {
             AvanceActividad av = mapaAvances.get(act.getId());
             ActividadAvanceDTO dto = new ActividadAvanceDTO();
             dto.setActividadId(act.getId());
+            dto.setNombre(act.getNombre());
             dto.setDescripcion(act.getDescripcion());
             if (av != null) {
                 dto.setAvanceFisico(av.getAvanceFisico());
@@ -191,9 +256,8 @@ public class MetaService {
         return form;
     }
 
-    @Transactional
+@Transactional
     public void guardarReporteTrimestralCompleto(ReporteTrimestralProyectoFormDTO form) {
-        // 1. Guardar avance de la meta del proyecto si se proporcionó valor
         if (form.getMetaProductoId() != null && form.getAvanceLogradoMeta() != null) {
             registrarAvance(
                 form.getMetaProductoId(),
@@ -204,7 +268,6 @@ public class MetaService {
             );
         }
 
-        // 2. Guardar o actualizar avance individual de cada actividad
         if (form.getActividades() != null) {
             for (ActividadAvanceDTO actDTO : form.getActividades()) {
                 if (actDTO.getActividadId() == null) continue;
@@ -226,5 +289,4 @@ public class MetaService {
             }
         }
     }
-
 }
