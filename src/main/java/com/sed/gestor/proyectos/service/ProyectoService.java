@@ -2,6 +2,7 @@ package com.sed.gestor.proyectos.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,8 +46,8 @@ public class ProyectoService {
             return proyectoRepository.findAll();
         }
         return proyectoRepository.findAll().stream()
-            .filter(p -> p.getVigencia().equals(vigencia))
-            .toList();
+            .filter(p -> p.getVigencia() != null && p.getVigencia() <= vigencia && vigencia <= 2027)
+            .collect(Collectors.toList());
     }
 
     @Transactional (readOnly = true)

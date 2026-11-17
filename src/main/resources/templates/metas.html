@@ -46,35 +46,129 @@
         <p class="text-muted mb-0">El proyecto seleccionado no tiene una Meta Producto asociada en la estructura del PDD.</p>
     </div>
 
+<!-- Novedad -->
     <!-- Tarjeta de la Meta Producto del Proyecto Seleccionado -->
-    <div th:if="${proyecto != null and metaProducto != null}" class="card shadow-sm border-0 mb-4">
+<div th:if="${proyecto != null and metaProducto != null}" class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
             <div>
                 <span class="badge bg-info text-dark me-2" th:text="${metaProducto.codigo}">MP-01</span>
                 <strong class="fs-6" th:text="${metaProducto.descripcion}">Descripción de la Meta Producto</strong>
             </div>
-            <button class="btn btn-success fw-bold btn-sm" data-bs-toggle="modal" data-bs-target="#modalReportarAvance">
-                <i class="fa-solid fa-plus-circle me-1"></i> Reportar Avance
-            </button>
+            <div class="d-flex gap-2">
+                <!-- Botón para Definir Meta Anual -->
+                <button class="btn btn-outline-primary fw-bold btn-sm" data-bs-toggle="modal" data-bs-target="#modalMetaAnual">
+                    <i class="fa-solid fa-bullseye me-1"></i> Definir Meta <span th:text="${vigencia}">2024</span>
+                </button>
+                <button class="btn btn-success fw-bold btn-sm" data-bs-toggle="modal" data-bs-target="#modalReportarAvance">
+                    <i class="fa-solid fa-plus-circle me-1"></i> Reportar Avance
+                </button>
+            </div>
         </div>
         <div class="card-body">
-            <div class="row g-3 align-items-center">
+            <!-- Fila 1: Indicadores Principales (Cuatrienio y Anual) -->
+            <div class="row g-3 align-items-center mb-4">
                 <div class="col-md-3">
                     <div class="small text-muted text-uppercase fw-bold">Meta Cuatrienio</div>
-                    <div class="fs-5 fw-bold text-dark" th:text="${metaProducto.metaCuatrienio + ' ' + metaProducto.unidadMedida}">5000 Estudiantes</div>
+                    <div class="fs-5 fw-bold text-dark" th:text="${resumenEstrategico.metaCuatrienio + ' ' + metaProducto.unidadMedida}">5000 Estudiantes</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="small text-muted text-uppercase fw-bold">Avance Acumulado</div>
-                    <div class="fs-5 fw-bold text-success" th:text="${metaProducto.avanceAcumulado}">0</div>
+                    <div class="small text-muted text-uppercase fw-bold" th:text="'Meta Anual Programada (' + ${vigencia} + ')'">Meta Anual</div>
+                    <div class="fs-5 fw-bold text-success" th:text="${resumenEstrategico.metaAnualProgramada + ' ' + metaProducto.unidadMedida}">0</div>
                 </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase fw-bold" th:text="'Punto de Partida (' + ${vigencia} + ')'">Punto de Partida</div>
+                    <div class="fs-5 fw-bold text-secondary" th:text="${resumenEstrategico.puntoPartidaAnual}">0</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small text-muted text-uppercase fw-bold">Acumulado General</div>
+                    <div class="fs-5 fw-bold text-primary" th:text="${resumenEstrategico.acumuladoGeneral}">0</div>
+                </div>
+            </div>
+
+            <!-- Fila 2: Barras de Progreso (Anual y Cuatrienio) -->
+            <div class="row g-3 mb-4">
                 <div class="col-md-6">
-                    <div class="small text-muted text-uppercase fw-bold mb-1">% Cumplimiento</div>
-                    <div class="progress" style="height: 22px;">
-                        <div class="progress-bar bg-success fw-bold" role="progressbar" 
-                             th:style="'width: ' + ${metaProducto.porcentajeAvance} + '%'" 
-                             th:text="${metaProducto.porcentajeAvance + '%'}">0%</div>
+                    <div class="small text-muted text-uppercase fw-bold mb-1">% Cumplimiento Anual (<span th:text="${vigencia}">2024</span>)</div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-primary fw-bold" role="progressbar" 
+                             th:style="'width: ' + ${resumenEstrategico.porcentajeAnual} + '%'" 
+                             th:text="${resumenEstrategico.porcentajeAnual + '%'}">0%</div>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="small text-muted text-uppercase fw-bold mb-1">% Cumplimiento Cuatrienio</div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success fw-bold" role="progressbar" 
+                             th:style="'width: ' + ${resumenEstrategico.porcentajeCuatrienio} + '%'" 
+                             th:text="${resumenEstrategico.porcentajeCuatrienio + '%'}">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fila 3: Tarjeta de Consolidado Trimestral Dinámico (Suma de Meses) -->
+            <div class="card bg-light border-0 p-3 mb-3">
+                <div class="small text-uppercase fw-bold text-secondary mb-2">
+                    <i class="fa-solid fa-calculator me-1"></i>Consolidado Trimestral Dinámico (Suma de Meses) - <span th:text="${vigencia}">2024</span>
+                </div>
+                <div class="row text-center">
+                    <div class="col-md-3 border-end">
+                        <span class="text-muted small d-block">Trimestre 1 (T1)</span>
+                        <strong class="fs-5 text-dark" th:text="${resumenEstrategico.trimestre1}">0</strong>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <span class="text-muted small d-block">Trimestre 2 (T2)</span>
+                        <strong class="fs-5 text-dark" th:text="${resumenEstrategico.trimestre2}">0</strong>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <span class="text-muted small d-block">Trimestre 3 (T3)</span>
+                        <strong class="fs-5 text-dark" th:text="${resumenEstrategico.trimestre3}">0</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-muted small d-block">Trimestre 4 (T4)</span>
+                        <strong class="fs-5 text-dark" th:text="${resumenEstrategico.trimestre4}">0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fila 4: Indicadores Estadísticos -->
+            <div class="row text-muted small">
+                <div class="col-md-12">
+                    <span>Promedio Simple Anual: <strong class="text-dark" th:text="${resumenEstrategico.promedioSimpleAnual}">0</strong></span> | 
+                    <span>Promedio Ponderado Anual: <strong class="text-dark" th:text="${resumenEstrategico.promedioPonderadoAnual}">0</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Definir Meta Anual -->
+    <div class="modal fade" id="modalMetaAnual" tabindex="-1" aria-hidden="true" th:if="${metaProducto != null}">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{/metas/meta-anual/guardar}" method="post">
+                    <input type="hidden" name="metaProductoId" th:value="${metaProducto.id}" />
+                    <input type="hidden" name="proyectoId" th:value="${proyecto.id}" />
+                    <input type="hidden" name="vigencia" th:value="${vigencia}" />
+                    
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold"><i class="fa-solid fa-bullseye text-primary me-2"></i>Definir Meta Programada Anual</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Vigencia / Año</label>
+                            <input type="text" class="form-control" th:value="${vigencia}" readonly />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Meta a Programar para el Año</label>
+                            <input type="number" step="0.01" name="valorProgramado" class="form-control" 
+                                   th:value="${resumenEstrategico.metaAnualProgramada}" placeholder="Ej. 500" required />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary fw-bold">Guardar Meta Anual</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

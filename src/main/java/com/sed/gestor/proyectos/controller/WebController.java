@@ -2,6 +2,7 @@ package com.sed.gestor.proyectos.controller;
 
 import com.sed.gestor.proyectos.dto.ActividadResumenDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
+import com.sed.gestor.proyectos.dto.MetaEstrategicoResumenDTO;
 import com.sed.gestor.proyectos.dto.MetaProductoDTO;
 import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
@@ -206,17 +207,22 @@ public class WebController {
             MetaProducto metaProductoAsociada = proyectoSeleccionado.getMetaProducto();
             DashboardProyectoDTO resumen = metaService.obtenerResumenDashboard(proyectoSeleccionado.getId(), vigencia);
             
+            //Resumen metas (estrategico)
+            MetaEstrategicoResumenDTO resumenEstrategico = metaService.obtenerResumenEstrategico(metaProductoAsociada, vigencia);
+
             // Cargar actividades del proyecto transformadas con métricas acumuladas (% avance)
             List<ActividadResumenDTO> actividadesResumen = metaService.obtenerResumenActividadesProyecto(proyectoSeleccionado.getId(), vigencia);
 
             model.addAttribute("proyecto", proyectoSeleccionado);
             model.addAttribute("metaProducto", metaProductoAsociada);
             model.addAttribute("actividadesResumen", actividadesResumen);
+            model.addAttribute("resumenEstrategico", resumenEstrategico);
             model.addAttribute("resumenMetas", resumen != null ? resumen.getResumenMetas() : new ArrayList<>());
         } else {
             model.addAttribute("proyecto", null);
             model.addAttribute("metaProducto", null);
             model.addAttribute("actividadesResumen", new ArrayList<>());
+            model.addAttribute("resumenEstrategico", new ArrayList<>());
             model.addAttribute("resumenMetas", new ArrayList<>());
         }
 

@@ -4,17 +4,20 @@ import com.sed.gestor.proyectos.dto.ActividadAvanceDTO;
 import com.sed.gestor.proyectos.dto.ActividadResumenDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO.MetaResumenDTO;
+import com.sed.gestor.proyectos.dto.MetaEstrategicoResumenDTO;
 import com.sed.gestor.proyectos.dto.MetaProductoDTO;
 import com.sed.gestor.proyectos.dto.ReporteTrimestralProyectoFormDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.AvanceActividad;
 import com.sed.gestor.proyectos.model.AvanceMeta;
+import com.sed.gestor.proyectos.model.MetaAnual;
 import com.sed.gestor.proyectos.model.MetaProducto;
 import com.sed.gestor.proyectos.model.Programa;
 import com.sed.gestor.proyectos.model.Proyecto;
 import com.sed.gestor.proyectos.repository.ActividadRepository;
 import com.sed.gestor.proyectos.repository.AvanceActividadRepository;
 import com.sed.gestor.proyectos.repository.AvanceMetaRepository;
+import com.sed.gestor.proyectos.repository.MetaAnualRepository;
 import com.sed.gestor.proyectos.repository.MetaProductoRepository;
 import com.sed.gestor.proyectos.repository.ProgramaRepository;
 import com.sed.gestor.proyectos.repository.ProyectoRepository;
@@ -42,6 +45,9 @@ public class MetaService {
     private final ProyectoRepository proyectoRepository;
     private final ActividadRepository actividadRepository;
     private final AvanceActividadRepository avanceActividadRepository;
+
+    @Autowired 
+    private MetaAnualRepository metaAnualRepository;
 
     @Autowired 
     public MetaService(MetaProductoRepository metaProductoRepository, ProgramaRepository programaRepository,
@@ -151,7 +157,112 @@ public class MetaService {
         return avanceMetaRepository.save(avance);
     }
 
-@Transactional
+    @Transactional(readOnly = true)
+    public MetaEstrategicoResumenDTO obtenerResumenEstrategico(MetaProducto metaProducto, Integer vigenciaSeleccionada) {
+        List<AvanceMeta> allAvances = metaProducto.getAvances();
+        if (allAvances == null) {
+            allAvances = new ArrayList<>();
+        }
+
+        BigDecimal lineaBase = metaProducto.getLineaBase() != null ? BigDecimal.valueOf(metaProducto.getLineaBase()) : BigDecimal.ZERO;
+        BigDecimal metaCuatrienio = metaProducto.getMetaCuatrienio() != null ? BigDecimal.valueOf(metaProducto.getMetaCuatrienio()) : BigDecimal.ZERO;
+
+        // Obtener la meta programada específica para el año seleccionado (vigencia)
+        BigDecimal metaAnualProg = metaAnualRepository.findByMetaProductoIdAndVigencia(metaProducto.getId(), vigenciaSeleccionada)
+                .map(MetaAnual::getValorProgramado)
+                .orElse(BigDecimal.ZERO);
+
+        BigDecimal acumuladoAnterior = BigDecimal.ZERO;
+        BigDecimal avanceAnual = BigDecimal.ZERO;
+        
+        BigDecimal t1 = BigDecimal.ZERO;
+        BigDecimal t2 = BigDecimal.ZERO;
+        BigDecimal t3 = BigDecimal.ZERO;
+        BigDecimal t4 = BigDecimal.ZERO;
+
+        List<BigDecimal> valoresMensualesAnual = new ArrayList<>();
+
+        for (AvanceMeta av : allAvances) {
+            if (av.getVigencia() < vigenciaSeleccionada) {
+                if (av.getValorLogrado() != null) {
+                    acumuladoAnterior = acumuladoAnterior.add(av.getValorLogrado());
+                }
+            } else if (av.getVigencia().equals(vigenciaSeleccionada)) {
+                BigDecimal val = av.getValorLogrado() != null ? av.getValorLogrado() : BigDecimal.ZERO;
+                avanceAnual = avanceAnual.add(val);
+                
+                Integer mes = av.getMes();
+                if (mes != null) {
+                    if (mes >= 1 && mes <= 3) t1 = t1.add(val);
+                    else if (mes >= 4 && mes <= 6) t2 = t2.add(val);
+                    else if (mes >= 7 && mes <= 9) t3 = t3.add(val);
+                    else if (mes >= 10 && mes <= 12) t4 = t4.add(val);
+                }
+                valoresMensualesAnual.add(val);
+            }
+        }
+
+        // Punto de partida anual = Línea base original + acumulado de años anteriores
+        BigDecimal puntoPartidaAnual = lineaBase.add(acumuladoAnterior);
+        BigDecimal acumuladoAnual = puntoPartidaAnual.add(avanceAnual);
+
+        BigDecimal totalAvancesCuatrienio = allAvances.stream()
+                .map(a -> a.getValorLogrado() != null ? a.getValorLogrado() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal acumuladoGeneral = lineaBase.add(totalAvancesCuatrienio);
+
+        BigDecimal porcentajeCuatrienio = BigDecimal.ZERO;
+        if (metaCuatrienio.compareTo(BigDecimal.ZERO) > 0) {
+            porcentajeCuatrienio = acumuladoGeneral.multiply(BigDecimal.valueOf(100))
+                    .divide(metaCuatrienio, 2, RoundingMode.HALF_UP);
+        }
+
+        // Porcentaje anual respecto a la meta programada de ese año
+        BigDecimal porcentajeAnual = BigDecimal.ZERO;
+        if (metaAnualProg.compareTo(BigDecimal.ZERO) > 0) {
+            porcentajeAnual = avanceAnual.multiply(BigDecimal.valueOf(100))
+                    .divide(metaAnualProg, 2, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal promedioSimpleAnual = BigDecimal.ZERO;
+        if (!valoresMensualesAnual.isEmpty()) {
+            BigDecimal sumaMeses = valoresMensualesAnual.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+            promedioSimpleAnual = sumaMeses.divide(BigDecimal.valueOf(valoresMensualesAnual.size()), 2, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal promedioPonderadoAnual = avanceAnual.divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+
+        MetaEstrategicoResumenDTO dto = new MetaEstrategicoResumenDTO();
+        dto.setMetaCuatrienio(metaCuatrienio);
+        dto.setMetaAnualProgramada(metaAnualProg);
+        dto.setLineaBaseOriginal(lineaBase);
+        dto.setAcumuladoAnterior(acumuladoAnterior);
+        dto.setPuntoPartidaAnual(puntoPartidaAnual);
+        dto.setAvanceAnual(avanceAnual);
+        dto.setAcumuladoAnual(acumuladoAnual);
+        dto.setAcumuladoGeneral(acumuladoGeneral);
+        dto.setPorcentajeCuatrienio(porcentajeCuatrienio);
+        dto.setPorcentajeAnual(porcentajeAnual);
+        dto.setPromedioSimpleAnual(promedioSimpleAnual);
+        dto.setPromedioPonderadoAnual(promedioPonderadoAnual);
+        dto.setTrimestre1(t1);
+        dto.setTrimestre2(t2);
+        dto.setTrimestre3(t3);
+        dto.setTrimestre4(t4);
+
+        return dto;
+    }
+
+    @Transactional
+    public void guardarMetaAnual(Long metaProductoId, Integer vigencia, BigDecimal valorProgramado) {
+        MetaProducto meta = obtenerMetaProductoPorId(metaProductoId);
+        MetaAnual metaAnual = metaAnualRepository.findByMetaProductoIdAndVigencia(metaProductoId, vigencia)
+                .orElseGet(() -> new MetaAnual(meta, vigencia, valorProgramado));
+        metaAnual.setValorProgramado(valorProgramado);
+        metaAnualRepository.save(metaAnual);
+    }
+
+    @Transactional
     public AvanceActividad registrarAvanceActividad(Long actividadId, Integer mes, Integer vigencia, BigDecimal avanceFisico, String observaciones) {
         Actividad actividad = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada con ID: " + actividadId));
