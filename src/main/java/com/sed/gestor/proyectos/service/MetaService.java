@@ -167,7 +167,6 @@ public class MetaService {
         BigDecimal lineaBase = metaProducto.getLineaBase() != null ? BigDecimal.valueOf(metaProducto.getLineaBase()) : BigDecimal.ZERO;
         BigDecimal metaCuatrienio = metaProducto.getMetaCuatrienio() != null ? BigDecimal.valueOf(metaProducto.getMetaCuatrienio()) : BigDecimal.ZERO;
 
-        // Obtener la meta programada específica para el año seleccionado (vigencia)
         BigDecimal metaAnualProg = metaAnualRepository.findByMetaProductoIdAndVigencia(metaProducto.getId(), vigenciaSeleccionada)
                 .map(MetaAnual::getValorProgramado)
                 .orElse(BigDecimal.ZERO);
@@ -181,14 +180,19 @@ public class MetaService {
         BigDecimal t4 = BigDecimal.ZERO;
 
         List<BigDecimal> valoresMensualesAnual = new ArrayList<>();
+        List<BigDecimal> valoresMensualesCuatrienio = new ArrayList<>();
 
         for (AvanceMeta av : allAvances) {
+            BigDecimal val = av.getValorLogrado() != null ? av.getValorLogrado() : BigDecimal.ZERO;
+            
+            // Recolectar para promedios de cuatrienio
+            if (val.compareTo(BigDecimal.ZERO) > 0) {
+                valoresMensualesCuatrienio.add(val);
+            }
+
             if (av.getVigencia() < vigenciaSeleccionada) {
-                if (av.getValorLogrado() != null) {
-                    acumuladoAnterior = acumuladoAnterior.add(av.getValorLogrado());
-                }
+                acumuladoAnterior = acumuladoAnterior.add(val);
             } else if (av.getVigencia().equals(vigenciaSeleccionada)) {
-                BigDecimal val = av.getValorLogrado() != null ? av.getValorLogrado() : BigDecimal.ZERO;
                 avanceAnual = avanceAnual.add(val);
                 
                 Integer mes = av.getMes();
@@ -202,7 +206,6 @@ public class MetaService {
             }
         }
 
-        // Punto de partida anual = Línea base original + acumulado de años anteriores
         BigDecimal puntoPartidaAnual = lineaBase.add(acumuladoAnterior);
         BigDecimal acumuladoAnual = puntoPartidaAnual.add(avanceAnual);
 
@@ -217,20 +220,28 @@ public class MetaService {
                     .divide(metaCuatrienio, 2, RoundingMode.HALF_UP);
         }
 
-        // Porcentaje anual respecto a la meta programada de ese año
         BigDecimal porcentajeAnual = BigDecimal.ZERO;
         if (metaAnualProg.compareTo(BigDecimal.ZERO) > 0) {
             porcentajeAnual = avanceAnual.multiply(BigDecimal.valueOf(100))
                     .divide(metaAnualProg, 2, RoundingMode.HALF_UP);
         }
 
+        // Promedios Anuales
         BigDecimal promedioSimpleAnual = BigDecimal.ZERO;
         if (!valoresMensualesAnual.isEmpty()) {
             BigDecimal sumaMeses = valoresMensualesAnual.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
             promedioSimpleAnual = sumaMeses.divide(BigDecimal.valueOf(valoresMensualesAnual.size()), 2, RoundingMode.HALF_UP);
         }
-
         BigDecimal promedioPonderadoAnual = avanceAnual.divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+
+        // Promedios por Cuatrienio
+        BigDecimal promedioSimpleCuatrienio = BigDecimal.ZERO;
+        if (!valoresMensualesCuatrienio.isEmpty()) {
+            BigDecimal sumaCuatrienio = valoresMensualesCuatrienio.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+            promedioSimpleCuatrienio = sumaCuatrienio.divide(BigDecimal.valueOf(valoresMensualesCuatrienio.size()), 2, RoundingMode.HALF_UP);
+        }
+        // Ponderado cuatrienio (dividido entre los 4 años del periodo PDD)
+        BigDecimal promedioPonderadoCuatrienio = totalAvancesCuatrienio.divide(BigDecimal.valueOf(4), 2, RoundingMode.HALF_UP);
 
         MetaEstrategicoResumenDTO dto = new MetaEstrategicoResumenDTO();
         dto.setMetaCuatrienio(metaCuatrienio);
@@ -245,6 +256,8 @@ public class MetaService {
         dto.setPorcentajeAnual(porcentajeAnual);
         dto.setPromedioSimpleAnual(promedioSimpleAnual);
         dto.setPromedioPonderadoAnual(promedioPonderadoAnual);
+        dto.setPromedioSimpleCuatrienio(promedioSimpleCuatrienio);
+        dto.setPromedioPonderadoCuatrienio(promedioPonderadoCuatrienio);
         dto.setTrimestre1(t1);
         dto.setTrimestre2(t2);
         dto.setTrimestre3(t3);

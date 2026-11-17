@@ -55,21 +55,27 @@ VALUES
 (6, 'MP-12-06', 'Formar a quinientos (500) estudiantes en educación técnica para el trabajo y el desarrollo humano', 56.0, 500.0, 'Estudiantes', 12),
 (7, 'MP-12-07', 'Vincular a doscientos (200) voluntarios universitarios para acompañamiento a los estudiantes de las Instituciones Educativas Oficiales en el fortalecimiento de sus competencias', 0.0, 200.0, 'Voluntarios', 12);
 
--- 7. PROYECTOS
+-- 7. METAS ANUALES (Programación anual por vigencia para el cuatrienio 2024-2027)
+INSERT IGNORE INTO metas_anuales (id, meta_producto_id, vigencia, valor_programado)
+VALUES 
+(1, 1, 2024, 2000.00),
+(2, 1, 2025, 2200.00),
+(3, 1, 2026, 2400.00),
+(4, 1, 2027, 2400.00),
+(5, 6, 2024, 125.00),
+(6, 6, 2025, 125.00),
+(7, 6, 2026, 125.00),
+(8, 6, 2027, 125.00);
+
+-- 8. PROYECTOS
 INSERT IGNORE INTO proyectos (id, codigo_bpin, nombre, vigencia, meta_producto_id)
 VALUES 
 (1, '2026130010001', 'Proyecto de Fortalecimiento de la Educación Superior', 2026, 1),
 (2, '2024130010250', 'Generación de Oportunidades de Acceso y Permanencia a la Educación para el Trabajo y el Desarrollo Humano para Egresados del Sistema', 2024, 6);
 
--- 8. ACTIVIDADES (Actualizadas con meta_cuatrienio y unidad_medida)
+-- 9. ACTIVIDADES (Actualizadas con meta_cuatrienio y unidad_medida)
 INSERT IGNORE INTO actividades (id, nombre, presupuesto_inicial, fuente, descripcion, meta_cuatrienio, unidad_medida, proyecto_id)
 VALUES 
 (1, 'Convocatoria y asignación de créditos condonables', 1500000000.00, 'LIBRE_DESTINACION', 'Asignación de aportes para matrícula', 2000.00, 'Aportes', 1),
 (2, 'Organización de procesos de acompañamiento a la SED y a las IETDH para garantizar la entrega de becas a los beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', 'Acompañamiento a beneficiarios', 500.00, 'Estudiantes', 2),
 (3, 'Entregar becas de educación para el trabajo y el desarrollo humano a beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', 'Entrega efectiva de becas ETDH', 500.00, 'Becas', 2);
-
--- 9. EJEMPLO DE AVANCES DE ACTIVIDADES POR MES (Opcional)
--- INSERT IGNORE INTO avance_actividad (id, actividad_id, vigencia, mes, trimestre, avance_fisico, observaciones)
--- VALUES 
--- (1, 1, 2026, 1, 1, 150.00, 'Primer cohorte asignada en Enero'),
--- (2, 1, 2026, 2, 1, 300.00, 'Segunda cohorte asignada en Febrero');

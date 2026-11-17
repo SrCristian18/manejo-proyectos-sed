@@ -131,10 +131,16 @@
             </div>
 
             <!-- Fila 4: Indicadores Estadísticos -->
-            <div class="row text-muted small">
-                <div class="col-md-12">
-                    <span>Promedio Simple Anual: <strong class="text-dark" th:text="${resumenEstrategico.promedioSimpleAnual}">0</strong></span> | 
-                    <span>Promedio Ponderado Anual: <strong class="text-dark" th:text="${resumenEstrategico.promedioPonderadoAnual}">0</strong></span>
+            <div class="row text-muted small mt-3 pt-3 border-top">
+                <div class="col-md-6">
+                    <span class="d-block fw-bold text-secondary mb-1">Indicadores Anuales (<span th:text="${vigencia}">2024</span>):</span>
+                    <span>Promedio Simple: <strong class="text-dark" th:text="${resumenEstrategico.promedioSimpleAnual}">0</strong></span> | 
+                    <span>Promedio Ponderado: <strong class="text-dark" th:text="${resumenEstrategico.promedioPonderadoAnual}">0</strong></span>
+                </div>
+                <div class="col-md-6">
+                    <span class="d-block fw-bold text-secondary mb-1">Indicadores del Cuatrienio (2024-2027):</span>
+                    <span>Promedio Simple Cuatrienio: <strong class="text-dark" th:text="${resumenEstrategico.promedioSimpleCuatrienio}">0</strong></span> | 
+                    <span>Promedio Ponderado Cuatrienio: <strong class="text-dark" th:text="${resumenEstrategico.promedioPonderadoCuatrienio}">0</strong></span>
                 </div>
             </div>
         </div>

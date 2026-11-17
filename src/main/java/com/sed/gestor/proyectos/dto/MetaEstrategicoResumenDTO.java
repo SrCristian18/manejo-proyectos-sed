@@ -16,6 +16,8 @@ public class MetaEstrategicoResumenDTO {
     private BigDecimal porcentajeAnual = BigDecimal.ZERO;
     private BigDecimal promedioSimpleAnual = BigDecimal.ZERO;
     private BigDecimal promedioPonderadoAnual = BigDecimal.ZERO;
+    private BigDecimal promedioSimpleCuatrienio = BigDecimal.ZERO;
+    private BigDecimal promedioPonderadoCuatrienio = BigDecimal.ZERO;
 
     // Suma dinámica por Trimestre a partir de los meses
     private BigDecimal trimestre1 = BigDecimal.ZERO;
@@ -151,5 +153,21 @@ public class MetaEstrategicoResumenDTO {
 
     public void setMetaAnualProgramada(BigDecimal metaAnualProgramada) {
         this.metaAnualProgramada = metaAnualProgramada;
+    }
+
+    public BigDecimal getPromedioSimpleCuatrienio() {
+        return promedioSimpleCuatrienio;
+    }
+
+    public void setPromedioSimpleCuatrienio(BigDecimal promedioSimpleCuatrienio) {
+        this.promedioSimpleCuatrienio = promedioSimpleCuatrienio;
+    }
+
+    public BigDecimal getPromedioPonderadoCuatrienio() {
+        return promedioPonderadoCuatrienio;
+    }
+
+    public void setPromedioPonderadoCuatrienio(BigDecimal promedioPonderadoCuatrienio) {
+        this.promedioPonderadoCuatrienio = promedioPonderadoCuatrienio;
     }
 }
