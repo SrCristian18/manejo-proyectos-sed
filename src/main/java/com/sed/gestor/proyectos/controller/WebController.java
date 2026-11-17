@@ -256,6 +256,18 @@ public class WebController {
         return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
     }
 
+    //agregar metas anuales de actividad
+    @PostMapping("/metas/actividad-meta-anual/guardar")
+    public String guardarActividadMetaAnual(@RequestParam Long actividadId,
+                                            @RequestParam Long proyectoId,
+                                            @RequestParam Integer vigencia,
+                                            @RequestParam BigDecimal valorProgramado,
+                                            RedirectAttributes redirectAttributes) {
+        metaService.guardarActividadMetaAnual(actividadId, vigencia, valorProgramado);
+        redirectAttributes.addFlashAttribute("mensajeExito", "Meta anual de la actividad guardada correctamente.");
+        return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
+    }
+
     //Procesar Formulario Web de Avance de Metas
     @PostMapping("/metas/reportar")
     public String reportarAvanceMeta(@RequestParam Long metaProductoId,
