@@ -270,6 +270,33 @@ public class WebController {
 
     //Procesar Formulario Web de Avance de Metas
     @PostMapping("/metas/reportar")
+    public String reportarAvanceEstrategico(@RequestParam Long metaProductoId,
+                                            @RequestParam Long proyectoId,
+                                            @RequestParam Integer vigencia,
+                                            @RequestParam Integer mes,
+                                            @RequestParam BigDecimal valorLogrado,
+                                            @RequestParam(required = false) String observaciones,
+                                            RedirectAttributes redirectAttributes) {
+        metaService.registrarAvanceEstrategico(metaProductoId, vigencia, mes, valorLogrado, observaciones);
+        redirectAttributes.addFlashAttribute("mensajeExito", "Avance estratégico registrado correctamente.");
+        return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
+    }
+
+    @PostMapping("/metas/actividades/reportar")
+    public String reportarAvancesActividades(@RequestParam Long proyectoId,
+                                             @RequestParam Integer vigencia,
+                                             @RequestParam Integer mes,
+                                             @RequestParam(required = false) List<Long> actividadIds,
+                                             @RequestParam(required = false) List<BigDecimal> avancesFisicos,
+                                             @RequestParam(required = false) List<String> observacionesActividades,
+                                             RedirectAttributes redirectAttributes) {
+        metaService.registrarAvancesActividades(vigencia, mes, actividadIds, avancesFisicos, observacionesActividades);
+        redirectAttributes.addFlashAttribute("mensajeExito", "Avance de actividades registrado correctamente.");
+        return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
+    }
+
+    /* 
+    @PostMapping("/metas/reportar")
     public String reportarAvanceMeta(@RequestParam Long metaProductoId,
                                      @RequestParam Integer mes,
                                      @RequestParam Integer vigencia,
@@ -300,6 +327,7 @@ public class WebController {
         redirectAttributes.addFlashAttribute("mensajeExito", "Avances reportados correctamente para el mes " + mes + ".");
         return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
     }
+    */
 
     //Proyectos
     @GetMapping ("/proyectos")

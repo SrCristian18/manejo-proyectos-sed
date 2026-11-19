@@ -45,7 +45,7 @@ public class AvanceActividad {
         this.id = id;
         this.actividad = actividad;
         this.vigencia = vigencia;
-        this.mes = mes;
+        this.setMes(mes);
         this.avanceFisico = avanceFisico;
         this.observaciones = observaciones;
     }
@@ -116,10 +116,11 @@ public class AvanceActividad {
     }
 
     public void setMes(Integer mes) {
-        this.mes = mes;
-        if (mes != null){
-            this.trimestre = ((mes - 1)/3)+1;
+        if(mes == null || mes < 1 || mes > 12){
+            throw new IllegalArgumentException("El mes debe estar entre 1 y 12");
         }
+        this.mes = mes;
+        this.trimestre = ((mes - 1) / 3) + 1;
     }
 
     public LocalDateTime getFechaReporte() {

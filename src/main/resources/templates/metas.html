@@ -48,46 +48,55 @@
 
     <!-- Tarjeta de la Meta Producto del Proyecto Seleccionado (Bloque Estratégico) -->
     <div th:if="${proyecto != null and metaProducto != null}" class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+        <!-- Encabezado principal de sección (Homologado con Inversión) -->
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">
+                <i class="fa-solid fa-chess-queen text-primary me-2"></i>Meta Producto - Estratégico
+            </h5>
+            <span class="badge bg-light text-dark font-monospace" th:text="'Vigencia ' + ${vigencia}">Vigencia 2026</span>
+        </div>
+
+        <!-- Subcabecera con código, descripción y botones de acción -->
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 border-top">
             <div>
-                <span class="badge bg-info text-dark me-2" th:text="${metaProducto.codigo}">MP-01</span>
+                <span class="badge bg-info text-dark me-2" th:text="${metaProducto.codigo}">MP-12-06</span>
                 <strong class="fs-6" th:text="${metaProducto.descripcion}">Descripción de la Meta Producto</strong>
             </div>
             <div class="d-flex gap-2">
-                <!-- Botón para Definir Meta Anual -->
                 <button class="btn btn-outline-primary fw-bold btn-sm" data-bs-toggle="modal" data-bs-target="#modalMetaAnual">
-                    <i class="fa-solid fa-bullseye me-1"></i> Definir Meta <span th:text="${vigencia}">2024</span>
+                    <i class="fa-solid fa-bullseye me-1"></i> Definir Meta <span th:text="${vigencia}">2026</span>
                 </button>
                 <button class="btn btn-success fw-bold btn-sm" data-bs-toggle="modal" data-bs-target="#modalReportarAvance">
                     <i class="fa-solid fa-plus-circle me-1"></i> Reportar Avance
                 </button>
             </div>
         </div>
+
         <div class="card-body">
             <!-- Fila 1: Indicadores Principales (Cuatrienio y Anual) -->
             <div class="row g-3 align-items-center mb-4">
                 <div class="col-md-3">
                     <div class="small text-muted text-uppercase fw-bold">Meta Cuatrienio</div>
-                    <div class="fs-5 fw-bold text-dark" th:text="${resumenEstrategico.metaCuatrienio + ' ' + metaProducto.unidadMedida}">5000 Estudiantes</div>
+                    <div class="fs-5 fw-bold text-dark" th:text="${resumenEstrategico.metaCuatrienio + ' ' + metaProducto.unidadMedida}">500</div>
                 </div>
                 <div class="col-md-3">
                     <div class="small text-muted text-uppercase fw-bold" th:text="'Meta Anual Programada (' + ${vigencia} + ')'">Meta Anual</div>
-                    <div class="fs-5 fw-bold text-success" th:text="${resumenEstrategico.metaAnualProgramada + ' ' + metaProducto.unidadMedida}">0</div>
+                    <div class="fs-5 fw-bold text-success" th:text="${resumenEstrategico.metaAnualProgramada + ' ' + metaProducto.unidadMedida}">125</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="small text-muted text-uppercase fw-bold" th:text="'Linea Base (' + ${vigencia} + ')'">Linea Base</div>
-                    <div class="fs-5 fw-bold text-secondary" th:text="${resumenEstrategico.puntoPartidaAnual}">0</div>
+                    <div class="small text-muted text-uppercase fw-bold" th:text="'Línea Base (' + ${vigencia} + ')'">Línea Base</div>
+                    <div class="fs-5 fw-bold text-secondary" th:text="${resumenEstrategico.puntoPartidaAnual}">133</div>
                 </div>
                 <div class="col-md-3">
                     <div class="small text-muted text-uppercase fw-bold">Acumulado Cuatrienio</div>
-                    <div class="fs-5 fw-bold text-primary" th:text="${resumenEstrategico.acumuladoGeneral}">0</div>
+                    <div class="fs-5 fw-bold text-primary" th:text="${resumenEstrategico.acumuladoGeneral}">133</div>
                 </div>
             </div>
 
             <!-- Fila 2: Barras de Progreso (Anual y Cuatrienio) -->
             <div class="row g-3 mb-4">
                 <div class="col-md-6">
-                    <div class="small text-muted text-uppercase fw-bold mb-1">% Cumplimiento Anual (<span th:text="${vigencia}">2024</span>)</div>
+                    <div class="small text-muted text-uppercase fw-bold mb-1">% Cumplimiento Anual (<span th:text="${vigencia}">2026</span>)</div>
                     <div class="progress" style="height: 20px;">
                         <div class="progress-bar bg-primary fw-bold" role="progressbar" 
                              th:style="'width: ' + ${resumenEstrategico.porcentajeAnual} + '%'" 
@@ -104,10 +113,10 @@
                 </div>
             </div>
 
-            <!-- Fila 3: Tarjeta de Consolidado Trimestral Dinámico (Suma de Meses) -->
+            <!-- Fila 3: Consolidado Trimestral Dinámico (Suma de Meses) -->
             <div class="card bg-light border-0 p-3 mb-3">
                 <div class="small text-uppercase fw-bold text-secondary mb-2">
-                    <i class="fa-solid fa-calculator me-1"></i>Avance trimestral - <span th:text="${vigencia}">2024</span>
+                    <i class="fa-solid fa-calculator me-1"></i>Avance Trimestral - <span th:text="${vigencia}">2026</span>
                 </div>
                 <div class="row text-center">
                     <div class="col-md-3 border-end">
@@ -129,10 +138,18 @@
                 </div>
             </div>
 
-            <!-- Fila 4: Indicadores Estadísticos -->
-            <div class="row text-muted small mt-3 pt-3 border-top">
+            <!-- Fila 4: Acumulado Explícito del Año Presente -->
+            <div class="d-flex justify-content-between align-items-center bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded px-3 py-2 mb-3">
+                <span class="small fw-bold text-primary text-uppercase">
+                    <i class="fa-solid fa-chart-column me-1"></i>Cumplimiento Anual <span th:text="${vigencia}">2026</span>
+                </span>
+                <span class="fs-6 fw-bold text-primary" th:text="${resumenEstrategico.avanceAnual + ' ' + metaProducto.unidadMedida}">0</span>
+            </div>
+
+            <!-- Fila 5: Indicadores Estadísticos -->
+            <div class="row text-muted small pt-2 border-top">
                 <div class="col-md-6">
-                    <span class="d-block fw-bold text-secondary mb-1">Indicadores Anuales (<span th:text="${vigencia}">2024</span>):</span>
+                    <span class="d-block fw-bold text-secondary mb-1">Indicadores Anuales (<span th:text="${vigencia}">2026</span>):</span>
                     <span>Promedio Simple: <strong class="text-dark" th:text="${resumenEstrategico.promedioSimpleAnual}">0</strong></span> | 
                     <span>Promedio Ponderado: <strong class="text-dark" th:text="${resumenEstrategico.promedioPonderadoAnual}">0</strong></span>
                 </div>
@@ -235,7 +252,15 @@
             <h5 class="fw-bold mb-0">
                 <i class="fa-solid fa-list-check text-success me-2"></i>Actividades del Proyecto (Inversión)
             </h5>
-            <span class="badge bg-light text-dark font-monospace" th:text="'Vigencia ' + ${vigencia}">Vigencia 2024</span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark font-monospace" th:text="'Vigencia ' + ${vigencia}">Vigencia 2024</span>
+                <button th:if="${actividadesResumen != null and !actividadesResumen.isEmpty()}"
+                        class="btn btn-success fw-bold btn-sm" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#modalReportarActividades">
+                    <i class="fa-solid fa-plus-circle me-1"></i> Reportar Avance
+                </button>
+            </div>
         </div>
         <div class="card-body">
             <div th:if="${actividadesResumen == null or actividadesResumen.isEmpty()}" class="text-center text-muted py-3">
@@ -260,14 +285,14 @@
                     <div class="row g-3 align-items-center mb-3">
                         <div class="col-md-3">
                             <div class="small text-muted text-uppercase fw-bold">Meta Cuatrienio</div>
-                            <div class="fs-6 fw-bold text-dark" th:text="${act.metaCuatrienio + ' ' + act.unidadMedida}">100 Unidades</div>
+                            <div class="fs-6 fw-bold text-dark" th:text="${act.metaCuatrienio + ' ' + act.unidadMedida}">100</div>
                         </div>
                         <div class="col-md-3">
                             <div class="small text-muted text-uppercase fw-bold" th:text="'Meta Anual (' + ${vigencia} + ')'">Meta Anual</div>
                             <div class="fs-6 fw-bold text-success" th:text="${act.metaAnualProgramada + ' ' + act.unidadMedida}">0</div>
                         </div>
                         <div class="col-md-3">
-                            <div class="small text-muted text-uppercase fw-bold" th:text="'Linea Base (' + ${vigencia} + ')'">Linea Base</div>
+                            <div class="small text-muted text-uppercase fw-bold" th:text="'Línea Base (' + ${vigencia} + ')'">Línea Base</div>
                             <div class="fs-6 fw-bold text-secondary" th:text="${act.puntoPartidaAnual}">0</div>
                         </div>
                         <div class="col-md-3">
@@ -297,31 +322,39 @@
                     </div>
 
                     <!-- Fila 3: Consolidado Trimestral Dinámico (Suma de Meses) -->
-                    <div class="card bg-light border-0 p-2 mb-3">
+                    <div class="card bg-light border-0 p-2 mb-2">
                         <div class="small text-uppercase fw-bold text-secondary mb-1">
-                            <i class="fa-solid fa-calculator me-1"></i>Avance Trimestral - <span th:text="${vigencia}">2024</span>
+                            <i class="fa-solid fa-calculator me-1"></i>Consolidado Trimestral - <span th:text="${vigencia}">2026</span>
                         </div>
                         <div class="row text-center small">
                             <div class="col-md-3 border-end">
-                                <span class="text-muted d-block" style="font-size: 0.75rem;">T1 (Ene-Mar)</span>
+                                <span class="text-muted d-block" style="font-size: 0.75rem;">Trimestre 1 (T1)</span>
                                 <strong class="text-dark" th:text="${act.trimestre1}">0</strong>
                             </div>
                             <div class="col-md-3 border-end">
-                                <span class="text-muted d-block" style="font-size: 0.75rem;">T2 (Abr-Jun)</span>
+                                <span class="text-muted d-block" style="font-size: 0.75rem;">Trimestre 2 (T2)</span>
                                 <strong class="text-dark" th:text="${act.trimestre2}">0</strong>
                             </div>
                             <div class="col-md-3 border-end">
-                                <span class="text-muted d-block" style="font-size: 0.75rem;">T3 (Jul-Sep)</span>
+                                <span class="text-muted d-block" style="font-size: 0.75rem;">Trimestre 3 (T3)</span>
                                 <strong class="text-dark" th:text="${act.trimestre3}">0</strong>
                             </div>
                             <div class="col-md-3">
-                                <span class="text-muted d-block" style="font-size: 0.75rem;">T4 (Oct-Dic)</span>
+                                <span class="text-muted d-block" style="font-size: 0.75rem;">Trimestre 4 (T4)</span>
                                 <strong class="text-dark" th:text="${act.trimestre4}">0</strong>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Fila 4: Indicadores Adicionales (% Simple, Fechas Inicio/Cierre) -->
+                    <!-- Fila 4: Acumulado Explícito del Año Presente para la Actividad -->
+                    <div class="d-flex justify-content-between align-items-center bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded px-3 py-2 mb-2">
+                        <span class="small fw-bold text-primary text-uppercase">
+                            <i class="fa-solid fa-chart-column me-1"></i>Cumplimiento Anual <span th:text="${vigencia}">2026</span>
+                        </span>
+                        <span class="small fw-bold text-primary" th:text="${act.avanceAnual + ' ' + act.unidadMedida}">0</span>
+                    </div>
+
+                    <!-- Fila 5: Indicadores Adicionales (% Simple, Fechas Inicio/Cierre) -->
                     <div class="row text-muted small bg-white p-2 rounded border mb-3">
                         <div class="col-md-6">
                             <span>% Simple de Avance Anual: <strong class="text-dark" th:text="${act.porcentajeSimpleAnual + '%'}">0%</strong></span>
@@ -375,7 +408,7 @@
                 </div>
             </div>
 
-            <!-- Modales Dinámicos para Definir Meta Anual por Actividad (Ubicados de forma limpia dentro del contenedor) -->
+            <!-- Modales Dinámicos para Definir Meta Anual por Actividad -->
             <div th:each="act : ${actividadesResumen}" class="modal fade" th:id="'modalActividadMeta-' + ${act.id}" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -410,7 +443,7 @@
         </div>
     </div>
 
-    <!-- Modal para Reportar Avance (Mensual e Integrado con Actividades) -->
+    <!-- Modal 1: Reportar Avance Estratégico (EXCLUSIVO Meta Producto) -->
     <div class="modal fade" id="modalReportarAvance" tabindex="-1" aria-hidden="true" th:if="${metaProducto != null}">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -419,11 +452,10 @@
                     <input type="hidden" name="proyectoId" th:value="${proyecto.id}" />
                     
                     <div class="modal-header">
-                        <h5 class="modal-header-title fw-bold"><i class="fa-solid fa-chart-line text-success me-2"></i>Reportar Avance Físico</h5>
+                        <h5 class="modal-title fw-bold"><i class="fa-solid fa-chart-line text-success me-2"></i>Reportar Avance Estratégico</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <!-- Campos Principales Meta Producto -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">Vigencia</label>
@@ -456,57 +488,105 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Valor Logrado</label>
+                                <label class="form-label fw-semibold">Valor Logrado (<span th:text="${metaProducto.unidadMedida}">Unidades</span>)</label>
                                 <input type="number" step="0.01" name="valorLogrado" class="form-control" placeholder="Ej. 150" required />
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-2">
                             <label class="form-label fw-semibold">Observaciones Meta Producto</label>
-                            <textarea name="observaciones" class="form-control" rows="2" placeholder="Detalles o soporte del avance del mes..."></textarea>
-                        </div>
-
-                        <!-- Bloque de Avance por Actividades del Proyecto -->
-                        <div th:if="${actividadesResumen != null and !actividadesResumen.isEmpty()}" class="mt-4">
-                            <hr>
-                            <h6 class="fw-bold text-success mb-2">
-                                <i class="fa-solid fa-list-check me-1"></i>Avance de Actividades del Mes
-                            </h6>
-                            <p class="small text-muted mb-3">Reporte el avance físico logrado por cada actividad en el mes.</p>
-                            
-                            <div class="table-responsive border rounded">
-                                <table class="table table-sm table-striped align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 45%;">Actividad</th>
-                                            <th style="width: 25%;">Avance Físico</th>
-                                            <th style="width: 30%;">Observación Actividad</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr th:each="act : ${actividadesResumen}">
-                                            <input type="hidden" name="actividadIds" th:value="${act.id}" />
-                                            <td>
-                                                <span class="small fw-semibold text-dark" th:text="${act.nombre}">Nombre de la Actividad</span>
-                                            </td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number" step="0.01" min="0" name="avancesFisicos" class="form-control" placeholder="0" />
-                                                    <span class="input-group-text">% / Unid</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <input type="text" name="observacionesActividades" class="form-control form-control-sm" placeholder="Soporte del avance" />
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                            <textarea name="observaciones" class="form-control" rows="3" placeholder="Detalles o soporte del avance estratégico del mes..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success fw-bold">Guardar Reporte</button>
+                        <button type="submit" class="btn btn-success fw-bold">Guardar Avance Estratégico</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Reportar Avance de Inversión (EXCLUSIVO Actividades del Proyecto) -->
+    <div class="modal fade" id="modalReportarActividades" tabindex="-1" aria-hidden="true" 
+         th:if="${proyecto != null and actividadesResumen != null and !actividadesResumen.isEmpty()}">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form th:action="@{/metas/actividades/reportar}" method="post">
+                    <input type="hidden" name="proyectoId" th:value="${proyecto.id}" />
+                    
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold"><i class="fa-solid fa-list-check text-success me-2"></i>Reportar Avance de Actividades (Inversión)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Vigencia</label>
+                                <input type="number" name="vigencia" class="form-control" th:value="${vigencia}" required readonly />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Mes a Reportar</label>
+                                <select name="mes" class="form-select" required>
+                                    <option value="" disabled selected>Seleccione mes...</option>
+                                    <optgroup label="Trimestre 1 (T1)">
+                                        <option value="1">Enero (T1)</option>
+                                        <option value="2">Febrero (T1)</option>
+                                        <option value="3">Marzo (T1)</option>
+                                    </optgroup>
+                                    <optgroup label="Trimestre 2 (T2)">
+                                        <option value="4">Abril (T2)</option>
+                                        <option value="5">Mayo (T2)</option>
+                                        <option value="6">Junio (T2)</option>
+                                    </optgroup>
+                                    <optgroup label="Trimestre 3 (T3)">
+                                        <option value="7">Julio (T3)</option>
+                                        <option value="8">Agosto (T3)</option>
+                                        <option value="9">Septiembre (T3)</option>
+                                    </optgroup>
+                                    <optgroup label="Trimestre 4 (T4)">
+                                        <option value="10">Octubre (T4)</option>
+                                        <option value="11">Noviembre (T4)</option>
+                                        <option value="12">Diciembre (T4)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+
+                        <p class="small text-muted mb-2">Ingrese el avance físico únicamente para las actividades que tuvieron ejecución en el mes seleccionado:</p>
+                        
+                        <div class="table-responsive border rounded">
+                            <table class="table table-sm table-striped align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 42%;">Actividad</th>
+                                        <th style="width: 28%;">Avance Físico</th>
+                                        <th style="width: 30%;">Observación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="act : ${actividadesResumen}">
+                                        <td>
+                                            <input type="hidden" name="actividadIds" th:value="${act.id}" />
+                                            <span class="small fw-semibold text-dark" th:text="${act.nombre}">Nombre de la Actividad</span>
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" step="0.01" min="0" name="avancesFisicos" class="form-control" placeholder="0" />
+                                                <span class="input-group-text" th:text="${act.unidadMedida}">Unid</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="observacionesActividades" class="form-control form-control-sm" placeholder="Soporte del avance" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success fw-bold">Guardar Avance Actividades</button>
                     </div>
                 </form>
             </div>

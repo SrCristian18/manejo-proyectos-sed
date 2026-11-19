@@ -145,7 +145,8 @@ public class MetaService {
         metaProductoRepository.deleteById(id);
     }
 
-    //Avances e informacion
+    //Avances e informacion de Estratégico
+    /* 
     public AvanceMeta registrarAvance(Long metaProductoId, Integer mes, Integer vigencia, BigDecimal valorLogrado, String observaciones){
         MetaProducto metaProducto = obtenerMetaProductoPorId(metaProductoId);
         
@@ -160,6 +161,56 @@ public class MetaService {
         avance.setFechaReporte(LocalDateTime.now());
 
         return avanceMetaRepository.save(avance);
+    }
+    */
+
+    @Transactional
+    public void registrarAvanceEstrategico(Long metaProductoId, Integer vigencia, Integer mes,
+                                           BigDecimal valorLogrado, String observaciones) {
+        MetaProducto meta = metaProductoRepository.findById(metaProductoId)
+                .orElseThrow(() -> new EntityNotFoundException("Meta Producto no encontrada"));
+
+        AvanceMeta avance = new AvanceMeta();
+        avance.setMetaProducto(meta);
+        avance.setVigencia(vigencia);
+        avance.setMes(mes);
+        avance.setValorLogrado(valorLogrado);
+        avance.setObservaciones(observaciones);
+        avance.setFechaReporte(LocalDateTime.now());
+
+        avanceMetaRepository.save(avance);
+    }
+
+    @Transactional
+    public void registrarAvancesActividades(Integer vigencia, Integer mes,
+                                            List<Long> actividadIds,
+                                            List<BigDecimal> avancesFisicos,
+                                            List<String> observacionesActividades) {
+        if (actividadIds == null || avancesFisicos == null) return;
+
+        LocalDateTime ahora = LocalDateTime.now();
+
+        for (int i = 0; i < actividadIds.size(); i++) {
+            BigDecimal valor = avancesFisicos.get(i);
+            if (valor != null && valor.compareTo(BigDecimal.ZERO) > 0) {
+                Long actId = actividadIds.get(i);
+                Actividad actividad = actividadRepository.findById(actId)
+                        .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada: " + actId));
+
+                AvanceActividad avanceAct = new AvanceActividad();
+                avanceAct.setActividad(actividad);
+                avanceAct.setVigencia(vigencia);
+                avanceAct.setMes(mes); // Calcula automáticamente el trimestre
+                avanceAct.setAvanceFisico(valor);
+                avanceAct.setObservaciones(
+                        (observacionesActividades != null && i < observacionesActividades.size())
+                                ? observacionesActividades.get(i) : null
+                );
+                avanceAct.setFechaReporte(ahora);
+
+                avanceActividadRepository.save(avanceAct);
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -302,7 +353,7 @@ public class MetaService {
     }
 
     //barras de progreso
-@Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public List<ActividadResumenDTO> obtenerResumenActividadesProyecto(Long proyectoId, Integer vigenciaSeleccionada) {
         List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoId);
         List<ActividadResumenDTO> resumenes = new ArrayList<>();
@@ -413,6 +464,7 @@ public class MetaService {
     }
 
     //nuevo
+    /*
     @Transactional(readOnly = true)
     public ReporteTrimestralProyectoFormDTO obtenerFormularioReporteProyecto(Long proyectoId, Integer vigencia, Integer trimestre) {
         Proyecto proyecto = proyectoRepository.findById(proyectoId)
@@ -450,38 +502,6 @@ public class MetaService {
         form.setActividades(actividadesDTO);
         return form;
     }
-
-@Transactional
-    public void guardarReporteTrimestralCompleto(ReporteTrimestralProyectoFormDTO form) {
-        if (form.getMetaProductoId() != null && form.getAvanceLogradoMeta() != null) {
-            registrarAvance(
-                form.getMetaProductoId(),
-                form.getTrimestre(),
-                form.getVigencia(),
-                form.getAvanceLogradoMeta(),
-                form.getObservacionesMeta()
-            );
-        }
-
-        if (form.getActividades() != null) {
-            for (ActividadAvanceDTO actDTO : form.getActividades()) {
-                if (actDTO.getActividadId() == null) continue;
-
-                AvanceActividad avance = avanceActividadRepository
-                        .findByActividadIdAndVigenciaAndTrimestre(actDTO.getActividadId(), form.getVigencia(), form.getTrimestre())
-                        .orElseGet(() -> {
-                            AvanceActividad nuevo = new AvanceActividad();
-                            Actividad act = actividadRepository.getReferenceById(actDTO.getActividadId());
-                            nuevo.setActividad(act);
-                            nuevo.setVigencia(form.getVigencia());
-                            nuevo.setTrimestre(form.getTrimestre());
-                            return nuevo;
-                        });
-
-                avance.setAvanceFisico(actDTO.getAvanceFisico());
-                avance.setObservaciones(actDTO.getObservaciones());
-                avanceActividadRepository.save(avance);
-            }
-        }
-    }
+    */
+    //
 }

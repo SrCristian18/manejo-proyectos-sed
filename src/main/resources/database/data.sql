@@ -69,7 +69,7 @@ VALUES
 (1, '2024130010250', 'Generación de Oportunidades de Acceso y Permanencia a la Educación para el Trabajo y el Desarrollo Humano para Egresados del Sistema', 2024, 6);
 
 -- 9. ACTIVIDADES (Actualizadas con meta_cuatrienio y unidad_medida)
-INSERT IGNORE INTO actividades (id, nombre, presupuesto_inicial, fuente, descripcion, meta_cuatrienio, unidad_medida, proyecto_id)
+INSERT IGNORE INTO actividades (id, nombre, presupuesto_inicial, fuente, descripcion, meta_cuatrienio, unidad_medida, fecha_inicio, fecha_cierre, proyecto_id)
 VALUES 
-(1, 'Organización de procesos de acompañamiento a la SED y a las IETDH para garantizar la entrega de becas a los beneficiarios', 1500000000, 'LIBRE_DESTINACION', 'Acompañamiento a beneficiarios', 500, 'Estudiantes', 1),
-(2, 'Entregar becas de educación para el trabajo y el desarrollo humano a beneficiarios', 1500000000, 'LIBRE_DESTINACION', 'Entrega efectiva de becas ETDH', 500, 'Becas', 1);
+(1, 'Organización de procesos de acompañamiento a la SED y a las IETDH para garantizar la entrega de becas a los beneficiarios', 1500000000, 'LIBRE_DESTINACION', 'Organizar el proceso para la entrega de becas de media tecnica', 1, 'Organización', '2026-01-31', '2026-12-31', 1),
+(2, 'Entregar becas de educación para el trabajo y el desarrollo humano a beneficiarios', 1500000000, 'LIBRE_DESTINACION', 'Entrega efectiva de becas ETDH', 500, 'Becas', '2026-02-28', '2026-11-30', 1);
