@@ -47,35 +47,29 @@ VALUES
 -- 6. METAS PRODUCTO
 INSERT IGNORE INTO metas_producto (id, codigo, descripcion, linea_base, meta_cuatrienio, unidad_medida, programa_id)
 VALUES 
-(1, 'MP-12-01', 'Becar en educación superior a nueve mil (9.000) estudiantes egresados de Instituciones Educativas Oficiales y con matrícula contratada', 3250.0, 9000.0, 'Estudiantes', 12),
-(2, 'MP-12-02', 'Becar en educación superior a quinientos cuarenta y cuatro (544) estudiantes egresados de IEO y con matrícula contratada, con becas inclusivas (indígenas, afro, víctimas y con discapacidad)', 228.0, 544.0, 'Estudiantes', 12),
-(3, 'MP-12-03', 'Graduar doce mil (12.000) estudiantes de media técnica con doble titulación', 2136.0, 12000.0, 'Estudiantes', 12),
-(4, 'MP-12-04', 'Implementar doble titulación en veinticinco (25) Instituciones Educativas Oficiales con media técnica e Instituciones Educativas Oficiales académicas', 16.0, 25.0, 'Instituciones Educativas', 12),
-(5, 'MP-12-05', 'Asistir con programas piloto de bilingüismo a cinco (5) Instituciones Educativas Oficiales con nodos de media técnica', 0.0, 5.0, 'Instituciones Educativas', 12),
-(6, 'MP-12-06', 'Formar a quinientos (500) estudiantes en educación técnica para el trabajo y el desarrollo humano', 56.0, 500.0, 'Estudiantes', 12),
-(7, 'MP-12-07', 'Vincular a doscientos (200) voluntarios universitarios para acompañamiento a los estudiantes de las Instituciones Educativas Oficiales en el fortalecimiento de sus competencias', 0.0, 200.0, 'Voluntarios', 12);
+(1, 'MP-12-01', 'Becar en educación superior a nueve mil (9.000) estudiantes egresados de Instituciones Educativas Oficiales y con matrícula contratada', 0, 9000, 'Estudiantes', 12),
+(2, 'MP-12-02', 'Becar en educación superior a quinientos cuarenta y cuatro (544) estudiantes egresados de IEO y con matrícula contratada, con becas inclusivas (indígenas, afro, víctimas y con discapacidad)', 0, 544, 'Estudiantes', 12),
+(3, 'MP-12-03', 'Graduar doce mil (12.000) estudiantes de media técnica con doble titulación', 0, 12000, 'Estudiantes', 12),
+(4, 'MP-12-04', 'Implementar doble titulación en veinticinco (25) Instituciones Educativas Oficiales con media técnica e Instituciones Educativas Oficiales académicas', 0, 25, 'Instituciones Educativas', 12),
+(5, 'MP-12-05', 'Asistir con programas piloto de bilingüismo a cinco (5) Instituciones Educativas Oficiales con nodos de media técnica', 0, 5, 'Instituciones Educativas', 12),
+(6, 'MP-12-06', 'Formar a quinientos (500) estudiantes en educación técnica para el trabajo y el desarrollo humano', 0, 500, 'Estudiantes', 12),
+(7, 'MP-12-07', 'Vincular a doscientos (200) voluntarios universitarios para acompañamiento a los estudiantes de las Instituciones Educativas Oficiales en el fortalecimiento de sus competencias', 0, 200, 'Voluntarios', 12);
 
 -- 7. METAS ANUALES (Programación anual por vigencia para el cuatrienio 2024-2027)
 INSERT IGNORE INTO metas_anuales (id, meta_producto_id, vigencia, valor_programado)
 VALUES 
-(1, 1, 2024, 2000.00),
-(2, 1, 2025, 2200.00),
-(3, 1, 2026, 2400.00),
-(4, 1, 2027, 2400.00),
-(5, 6, 2024, 125.00),
-(6, 6, 2025, 125.00),
-(7, 6, 2026, 125.00),
-(8, 6, 2027, 125.00);
+(1, 6, 2024, 125),
+(2, 6, 2025, 125),
+(3, 6, 2026, 125),
+(4, 6, 2027, 125);
 
 -- 8. PROYECTOS
 INSERT IGNORE INTO proyectos (id, codigo_bpin, nombre, vigencia, meta_producto_id)
 VALUES 
-(1, '2026130010001', 'Proyecto de Fortalecimiento de la Educación Superior', 2026, 1),
-(2, '2024130010250', 'Generación de Oportunidades de Acceso y Permanencia a la Educación para el Trabajo y el Desarrollo Humano para Egresados del Sistema', 2024, 6);
+(1, '2024130010250', 'Generación de Oportunidades de Acceso y Permanencia a la Educación para el Trabajo y el Desarrollo Humano para Egresados del Sistema', 2024, 6);
 
 -- 9. ACTIVIDADES (Actualizadas con meta_cuatrienio y unidad_medida)
 INSERT IGNORE INTO actividades (id, nombre, presupuesto_inicial, fuente, descripcion, meta_cuatrienio, unidad_medida, proyecto_id)
 VALUES 
-(1, 'Convocatoria y asignación de créditos condonables', 1500000000.00, 'LIBRE_DESTINACION', 'Asignación de aportes para matrícula', 2000.00, 'Aportes', 1),
-(2, 'Organización de procesos de acompañamiento a la SED y a las IETDH para garantizar la entrega de becas a los beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', 'Acompañamiento a beneficiarios', 500.00, 'Estudiantes', 2),
-(3, 'Entregar becas de educación para el trabajo y el desarrollo humano a beneficiarios', 1500000000.00, 'LIBRE_DESTINACION', 'Entrega efectiva de becas ETDH', 500.00, 'Becas', 2);
+(1, 'Organización de procesos de acompañamiento a la SED y a las IETDH para garantizar la entrega de becas a los beneficiarios', 1500000000, 'LIBRE_DESTINACION', 'Acompañamiento a beneficiarios', 500, 'Estudiantes', 1),
+(2, 'Entregar becas de educación para el trabajo y el desarrollo humano a beneficiarios', 1500000000, 'LIBRE_DESTINACION', 'Entrega efectiva de becas ETDH', 500, 'Becas', 1);

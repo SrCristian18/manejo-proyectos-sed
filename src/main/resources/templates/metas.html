@@ -75,11 +75,11 @@
                     <div class="fs-5 fw-bold text-success" th:text="${resumenEstrategico.metaAnualProgramada + ' ' + metaProducto.unidadMedida}">0</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="small text-muted text-uppercase fw-bold" th:text="'Punto de Partida (' + ${vigencia} + ')'">Punto de Partida</div>
+                    <div class="small text-muted text-uppercase fw-bold" th:text="'Linea Base (' + ${vigencia} + ')'">Linea Base</div>
                     <div class="fs-5 fw-bold text-secondary" th:text="${resumenEstrategico.puntoPartidaAnual}">0</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="small text-muted text-uppercase fw-bold">Acumulado General</div>
+                    <div class="small text-muted text-uppercase fw-bold">Acumulado Cuatrienio</div>
                     <div class="fs-5 fw-bold text-primary" th:text="${resumenEstrategico.acumuladoGeneral}">0</div>
                 </div>
             </div>
@@ -107,7 +107,7 @@
             <!-- Fila 3: Tarjeta de Consolidado Trimestral Dinámico (Suma de Meses) -->
             <div class="card bg-light border-0 p-3 mb-3">
                 <div class="small text-uppercase fw-bold text-secondary mb-2">
-                    <i class="fa-solid fa-calculator me-1"></i>Consolidado Trimestral Dinámico (Suma de Meses) - <span th:text="${vigencia}">2024</span>
+                    <i class="fa-solid fa-calculator me-1"></i>Avance trimestral - <span th:text="${vigencia}">2024</span>
                 </div>
                 <div class="row text-center">
                     <div class="col-md-3 border-end">
@@ -260,18 +260,18 @@
                     <div class="row g-3 align-items-center mb-3">
                         <div class="col-md-3">
                             <div class="small text-muted text-uppercase fw-bold">Meta Cuatrienio</div>
-                            <div class="fs-6 fw-bold text-dark" th:text="${act.metaCuatrienio + ' ' + act.unidadMedida}">100.0 Unidades</div>
+                            <div class="fs-6 fw-bold text-dark" th:text="${act.metaCuatrienio + ' ' + act.unidadMedida}">100 Unidades</div>
                         </div>
                         <div class="col-md-3">
                             <div class="small text-muted text-uppercase fw-bold" th:text="'Meta Anual (' + ${vigencia} + ')'">Meta Anual</div>
                             <div class="fs-6 fw-bold text-success" th:text="${act.metaAnualProgramada + ' ' + act.unidadMedida}">0</div>
                         </div>
                         <div class="col-md-3">
-                            <div class="small text-muted text-uppercase fw-bold" th:text="'Punto Partida (' + ${vigencia} + ')'">Punto Partida</div>
+                            <div class="small text-muted text-uppercase fw-bold" th:text="'Linea Base (' + ${vigencia} + ')'">Linea Base</div>
                             <div class="fs-6 fw-bold text-secondary" th:text="${act.puntoPartidaAnual}">0</div>
                         </div>
                         <div class="col-md-3">
-                            <div class="small text-muted text-uppercase fw-bold">Acumulado General</div>
+                            <div class="small text-muted text-uppercase fw-bold">Acumulado Cuatrienio</div>
                             <div class="fs-6 fw-bold text-primary" th:text="${act.acumuladoGeneral}">0</div>
                         </div>
                     </div>
@@ -299,7 +299,7 @@
                     <!-- Fila 3: Consolidado Trimestral Dinámico (Suma de Meses) -->
                     <div class="card bg-light border-0 p-2 mb-3">
                         <div class="small text-uppercase fw-bold text-secondary mb-1">
-                            <i class="fa-solid fa-calculator me-1"></i>Consolidado Trimestral (Suma de Meses) - <span th:text="${vigencia}">2024</span>
+                            <i class="fa-solid fa-calculator me-1"></i>Avance Trimestral - <span th:text="${vigencia}">2024</span>
                         </div>
                         <div class="row text-center small">
                             <div class="col-md-3 border-end">
@@ -364,7 +364,7 @@
                                             </span>
                                         </td>
                                         <td><span class="badge bg-secondary" th:text="'T' + ${av.trimestre}">T1</span></td>
-                                        <td class="text-success fw-bold" th:text="${av.avanceFisico}">100.00</td>
+                                        <td class="text-success fw-bold" th:text="${av.avanceFisico}">100</td>
                                         <td th:text="${av.observaciones != null and !av.observaciones.isEmpty() ? av.observaciones : 'Sin observaciones'}">Obs</td>
                                         <td class="text-muted" th:text="${av.fechaReporte != null ? #temporals.format(av.fechaReporte, 'yyyy-MM-dd HH:mm') : 'Sin registro'}">Fecha</td>
                                     </tr>
@@ -456,7 +456,7 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Valor Logrado Meta</label>
+                                <label class="form-label fw-semibold">Valor Logrado</label>
                                 <input type="number" step="0.01" name="valorLogrado" class="form-control" placeholder="Ej. 150" required />
                             </div>
                         </div>
@@ -472,7 +472,7 @@
                             <h6 class="fw-bold text-success mb-2">
                                 <i class="fa-solid fa-list-check me-1"></i>Avance de Actividades del Mes
                             </h6>
-                            <p class="small text-muted mb-3">Reporte el avance físico logrado por cada actividad individual en este mes.</p>
+                            <p class="small text-muted mb-3">Reporte el avance físico logrado por cada actividad en el mes.</p>
                             
                             <div class="table-responsive border rounded">
                                 <table class="table table-sm table-striped align-middle mb-0">
@@ -491,7 +491,7 @@
                                             </td>
                                             <td>
                                                 <div class="input-group input-group-sm">
-                                                    <input type="number" step="0.01" min="0" name="avancesFisicos" class="form-control" placeholder="0.00" />
+                                                    <input type="number" step="0.01" min="0" name="avancesFisicos" class="form-control" placeholder="0" />
                                                     <span class="input-group-text">% / Unid</span>
                                                 </div>
                                             </td>
