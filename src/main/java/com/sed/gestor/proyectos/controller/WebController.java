@@ -2,6 +2,7 @@ package com.sed.gestor.proyectos.controller;
 
 import com.sed.gestor.proyectos.dto.ActividadResumenDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
+import com.sed.gestor.proyectos.dto.MetaEstrategicoResumenDTO;
 import com.sed.gestor.proyectos.dto.MetaProductoDTO;
 import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
@@ -206,17 +207,22 @@ public class WebController {
             MetaProducto metaProductoAsociada = proyectoSeleccionado.getMetaProducto();
             DashboardProyectoDTO resumen = metaService.obtenerResumenDashboard(proyectoSeleccionado.getId(), vigencia);
             
+            //Resumen metas (estrategico)
+            MetaEstrategicoResumenDTO resumenEstrategico = metaService.obtenerResumenEstrategico(metaProductoAsociada, vigencia);
+
             // Cargar actividades del proyecto transformadas con métricas acumuladas (% avance)
             List<ActividadResumenDTO> actividadesResumen = metaService.obtenerResumenActividadesProyecto(proyectoSeleccionado.getId(), vigencia);
 
             model.addAttribute("proyecto", proyectoSeleccionado);
             model.addAttribute("metaProducto", metaProductoAsociada);
             model.addAttribute("actividadesResumen", actividadesResumen);
+            model.addAttribute("resumenEstrategico", resumenEstrategico);
             model.addAttribute("resumenMetas", resumen != null ? resumen.getResumenMetas() : new ArrayList<>());
         } else {
             model.addAttribute("proyecto", null);
             model.addAttribute("metaProducto", null);
             model.addAttribute("actividadesResumen", new ArrayList<>());
+            model.addAttribute("resumenEstrategico", new ArrayList<>());
             model.addAttribute("resumenMetas", new ArrayList<>());
         }
 
@@ -237,7 +243,62 @@ public class WebController {
         }
     */
 
+    //Agregar metas anuales
+    @PostMapping("/metas/meta-anual/guardar")
+    public String guardarMetaAnual(@RequestParam Long metaProductoId,
+                                   @RequestParam Long proyectoId,
+                                   @RequestParam Integer vigencia,
+                                   @RequestParam(required = false) BigDecimal valorProgramado,
+                                   @RequestParam(defaultValue = "false") boolean noProgramada,
+                                   RedirectAttributes redirectAttributes) {
+        metaService.guardarMetaAnual(metaProductoId, vigencia, valorProgramado, noProgramada);
+        redirectAttributes.addFlashAttribute("mensajeExito",
+                noProgramada ? "Vigencia marcada como No Programada (NP)." : "Meta anual guardada correctamente.");
+        return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
+    }
+
+    //agregar metas anuales de actividad
+    @PostMapping("/metas/actividad-meta-anual/guardar")
+    public String guardarActividadMetaAnual(@RequestParam Long actividadId,
+                                            @RequestParam Long proyectoId,
+                                            @RequestParam Integer vigencia,
+                                            @RequestParam(required = false) BigDecimal valorProgramado,
+                                            @RequestParam(defaultValue = "false") boolean noProgramada,
+                                            RedirectAttributes redirectAttributes) {
+        metaService.guardarActividadMetaAnual(actividadId, vigencia, valorProgramado, noProgramada);
+        redirectAttributes.addFlashAttribute("mensajeExito",
+                noProgramada ? "Actividad marcada como No Programada (NP) para la vigencia." : "Meta anual de la actividad guardada correctamente.");
+        return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
+    }
+
     //Procesar Formulario Web de Avance de Metas
+    @PostMapping("/metas/reportar")
+    public String reportarAvanceEstrategico(@RequestParam Long metaProductoId,
+                                            @RequestParam Long proyectoId,
+                                            @RequestParam Integer vigencia,
+                                            @RequestParam Integer mes,
+                                            @RequestParam BigDecimal valorLogrado,
+                                            @RequestParam(required = false) String observaciones,
+                                            RedirectAttributes redirectAttributes) {
+        metaService.registrarAvanceEstrategico(metaProductoId, vigencia, mes, valorLogrado, observaciones);
+        redirectAttributes.addFlashAttribute("mensajeExito", "Avance estratégico registrado correctamente.");
+        return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
+    }
+
+    @PostMapping("/metas/actividades/reportar")
+    public String reportarAvancesActividades(@RequestParam Long proyectoId,
+                                             @RequestParam Integer vigencia,
+                                             @RequestParam Integer mes,
+                                             @RequestParam(required = false) List<Long> actividadIds,
+                                             @RequestParam(required = false) List<BigDecimal> avancesFisicos,
+                                             @RequestParam(required = false) List<String> observacionesActividades,
+                                             RedirectAttributes redirectAttributes) {
+        metaService.registrarAvancesActividades(vigencia, mes, actividadIds, avancesFisicos, observacionesActividades);
+        redirectAttributes.addFlashAttribute("mensajeExito", "Avance de actividades registrado correctamente.");
+        return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
+    }
+
+    /* 
     @PostMapping("/metas/reportar")
     public String reportarAvanceMeta(@RequestParam Long metaProductoId,
                                      @RequestParam Integer mes,
@@ -269,6 +330,7 @@ public class WebController {
         redirectAttributes.addFlashAttribute("mensajeExito", "Avances reportados correctamente para el mes " + mes + ".");
         return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
     }
+    */
 
     //Proyectos
     @GetMapping ("/proyectos")

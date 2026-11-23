@@ -1,6 +1,7 @@
 package com.sed.gestor.proyectos.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +49,16 @@ public class Actividad {
 
     @Column (name = "unidad_medida", length = 100)
     private String unidadMedida;
+
+    @Column (name = "fecha_inicio")
+    private LocalDate fechaInicio;
+
+    @Column (name = "fecha_cierre")
+    private LocalDate fechaCierre;
+
+    @OneToMany (mappedBy = "actividad", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties ("actividad")
+    private List<ActividadMetaAnual> metasAnuales = new ArrayList<>();
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "proyecto_id", nullable = false)
@@ -169,4 +180,29 @@ public class Actividad {
     public void setAvances(List<AvanceActividad> avances) {
         this.avances = avances;
     }
+
+    public LocalDate getFechaInicio() {
+        return fechaInicio;
+    }
+
+    public void setFechaInicio(LocalDate fechaInicio) {
+        this.fechaInicio = fechaInicio;
+    }
+
+    public LocalDate getFechaCierre() {
+        return fechaCierre;
+    }
+
+    public void setFechaCierre(LocalDate fechaCierre) {
+        this.fechaCierre = fechaCierre;
+    }
+
+    public List<ActividadMetaAnual> getMetasAnuales() {
+        return metasAnuales;
+    }
+
+    public void setMetasAnuales(List<ActividadMetaAnual> metasAnuales) {
+        this.metasAnuales = metasAnuales;
+    }
+
 }

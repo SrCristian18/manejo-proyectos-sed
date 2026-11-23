@@ -51,7 +51,7 @@ public class AvanceMeta {
 
     public AvanceMeta(Integer mes, Integer vigencia, BigDecimal valorLogrado, String observaciones,
             LocalDateTime fechaReporte, MetaProducto metaProducto) {
-        this.mes = mes;
+        this.setMes(mes);
         this.vigencia = vigencia;
         this.valorLogrado = valorLogrado;
         this.observaciones = observaciones;
@@ -112,10 +112,11 @@ public class AvanceMeta {
     }
 
     public void setMes(Integer mes) {
-        this.mes = mes;
-        if(mes != null){
-            this.trimestre = ((mes - 1) / 3) + 1;
+        if(mes == null || mes < 1 || mes > 12){
+            throw new IllegalArgumentException("El mes debe estar entre 1 y 12");
         }
+        this.mes = mes;
+        this.trimestre = ((mes - 1) / 3) + 1;
     }
 
     public Integer getTrimestre() {
