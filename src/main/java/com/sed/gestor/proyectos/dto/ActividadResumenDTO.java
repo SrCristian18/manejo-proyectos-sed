@@ -35,6 +35,8 @@ public class ActividadResumenDTO {
 
     private List<AvanceActividad> avances = new ArrayList<>();
 
+    private boolean noProgramada = false;
+
     public ActividadResumenDTO() {
     }
 
@@ -97,4 +99,7 @@ public class ActividadResumenDTO {
 
     public List<AvanceActividad> getAvances() { return avances; }
     public void setAvances(List<AvanceActividad> avances) { this.avances = avances; }
+
+    public boolean isNoProgramada() {return noProgramada;}
+    public void setNoProgramada(boolean noProgramada) {this.noProgramada = noProgramada;}
 }

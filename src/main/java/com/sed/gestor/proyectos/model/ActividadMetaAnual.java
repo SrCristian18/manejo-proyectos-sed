@@ -33,6 +33,9 @@ public class ActividadMetaAnual {
     @Column (name = "valor_programado", precision = 12, scale = 2, nullable = false)
     private BigDecimal valorProgramado = BigDecimal.ZERO;
 
+    @Column(name = "no_programada", nullable = false)
+    private boolean noProgramada = false;
+
     public ActividadMetaAnual(){}
 
     public ActividadMetaAnual(Actividad actividad, Integer vigencia, BigDecimal valorProgramado) {
@@ -71,5 +74,17 @@ public class ActividadMetaAnual {
 
     public void setValorProgramado(BigDecimal valorProgramado) {
         this.valorProgramado = valorProgramado;
+    }
+
+    //metodo de apoyo
+    public boolean isNoProgramada(){
+        return noProgramada;
+    }
+
+    public void setNoProgramada(boolean noProgramada){
+        this.noProgramada = noProgramada;
+        if(noProgramada){
+            this.valorProgramado = BigDecimal.ZERO;
+        }
     }
 }

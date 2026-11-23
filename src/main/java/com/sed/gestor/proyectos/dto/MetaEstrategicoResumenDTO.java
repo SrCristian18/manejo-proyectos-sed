@@ -1,6 +1,10 @@
 package com.sed.gestor.proyectos.dto;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.sed.gestor.proyectos.model.AvanceMeta;
 
 public class MetaEstrategicoResumenDTO {
     private BigDecimal metaCuatrienio = BigDecimal.ZERO;
@@ -24,6 +28,11 @@ public class MetaEstrategicoResumenDTO {
     private BigDecimal trimestre2 = BigDecimal.ZERO;
     private BigDecimal trimestre3 = BigDecimal.ZERO;
     private BigDecimal trimestre4 = BigDecimal.ZERO;
+
+    private boolean noProgramada = false;
+
+    private List<AvanceMeta> avancesVigencia = new ArrayList<>();
+
 
     public MetaEstrategicoResumenDTO(){}
 
@@ -169,5 +178,21 @@ public class MetaEstrategicoResumenDTO {
 
     public void setPromedioPonderadoCuatrienio(BigDecimal promedioPonderadoCuatrienio) {
         this.promedioPonderadoCuatrienio = promedioPonderadoCuatrienio;
+    }
+
+    public List<AvanceMeta> getAvancesVigencia() {
+        return avancesVigencia;
+    }
+
+    public void setAvancesVigencia(List<AvanceMeta> avancesVigencia) {
+        this.avancesVigencia = avancesVigencia;
+    }
+
+    public boolean isNoProgramada() {
+        return noProgramada;
+    }
+
+    public void setNoProgramada(boolean noProgramada) {
+        this.noProgramada = noProgramada;
     }
 }

@@ -246,13 +246,14 @@ public class WebController {
     //Agregar metas anuales
     @PostMapping("/metas/meta-anual/guardar")
     public String guardarMetaAnual(@RequestParam Long metaProductoId,
-                                     @RequestParam Long proyectoId,
-                                     @RequestParam Integer vigencia,
-                                     @RequestParam BigDecimal valorProgramado,
-                                     RedirectAttributes redirectAttributes) {
-        metaService.guardarMetaAnual(metaProductoId, vigencia, valorProgramado);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Meta programada para la vigencia " + vigencia + " guardada correctamente.");
-
+                                   @RequestParam Long proyectoId,
+                                   @RequestParam Integer vigencia,
+                                   @RequestParam(required = false) BigDecimal valorProgramado,
+                                   @RequestParam(defaultValue = "false") boolean noProgramada,
+                                   RedirectAttributes redirectAttributes) {
+        metaService.guardarMetaAnual(metaProductoId, vigencia, valorProgramado, noProgramada);
+        redirectAttributes.addFlashAttribute("mensajeExito",
+                noProgramada ? "Vigencia marcada como No Programada (NP)." : "Meta anual guardada correctamente.");
         return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
     }
 
@@ -261,10 +262,12 @@ public class WebController {
     public String guardarActividadMetaAnual(@RequestParam Long actividadId,
                                             @RequestParam Long proyectoId,
                                             @RequestParam Integer vigencia,
-                                            @RequestParam BigDecimal valorProgramado,
+                                            @RequestParam(required = false) BigDecimal valorProgramado,
+                                            @RequestParam(defaultValue = "false") boolean noProgramada,
                                             RedirectAttributes redirectAttributes) {
-        metaService.guardarActividadMetaAnual(actividadId, vigencia, valorProgramado);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Meta anual de la actividad guardada correctamente.");
+        metaService.guardarActividadMetaAnual(actividadId, vigencia, valorProgramado, noProgramada);
+        redirectAttributes.addFlashAttribute("mensajeExito",
+                noProgramada ? "Actividad marcada como No Programada (NP) para la vigencia." : "Meta anual de la actividad guardada correctamente.");
         return "redirect:/metas?proyectoId=" + proyectoId + "&vigencia=" + vigencia;
     }
 

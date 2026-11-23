@@ -73,7 +73,7 @@
         </div>
 
         <div class="card-body">
-            <!-- Fila 1: Indicadores Principales (Cuatrienio y Anual) -->
+<!-- Fila 1: Indicadores Principales (Cuatrienio y Anual) -->
             <div class="row g-3 align-items-center mb-4">
                 <div class="col-md-3">
                     <div class="small text-muted text-uppercase fw-bold">Meta Cuatrienio</div>
@@ -81,7 +81,11 @@
                 </div>
                 <div class="col-md-3">
                     <div class="small text-muted text-uppercase fw-bold" th:text="'Meta Anual Programada (' + ${vigencia} + ')'">Meta Anual</div>
-                    <div class="fs-5 fw-bold text-success" th:text="${resumenEstrategico.metaAnualProgramada + ' ' + metaProducto.unidadMedida}">125</div>
+                    <div th:if="${resumenEstrategico.noProgramada}" class="fs-5 fw-bold text-secondary">
+                        <span class="badge bg-secondary">NP (No Programada)</span>
+                    </div>
+                    <div th:unless="${resumenEstrategico.noProgramada}" class="fs-5 fw-bold text-success" 
+                         th:text="${resumenEstrategico.metaAnualProgramada + ' ' + metaProducto.unidadMedida}">125</div>
                 </div>
                 <div class="col-md-3">
                     <div class="small text-muted text-uppercase fw-bold" th:text="'Línea Base (' + ${vigencia} + ')'">Línea Base</div>
@@ -97,7 +101,10 @@
             <div class="row g-3 mb-4">
                 <div class="col-md-6">
                     <div class="small text-muted text-uppercase fw-bold mb-1">% Cumplimiento Anual (<span th:text="${vigencia}">2026</span>)</div>
-                    <div class="progress" style="height: 20px;">
+                    <div th:if="${resumenEstrategico.noProgramada}" class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-secondary fw-bold" role="progressbar" style="width: 100%;">No Programada (NP)</div>
+                    </div>
+                    <div th:unless="${resumenEstrategico.noProgramada}" class="progress" style="height: 20px;">
                         <div class="progress-bar bg-primary fw-bold" role="progressbar" 
                              th:style="'width: ' + ${resumenEstrategico.porcentajeAnual} + '%'" 
                              th:text="${resumenEstrategico.porcentajeAnual + '%'}">0%</div>
@@ -176,14 +183,25 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Vigencia / Año</label>
-                            <input type="text" class="form-control" th:value="${vigencia}" readonly />
+                            <div class="mb-3">
+                                    <label class="form-label fw-semibold">Vigencia / Año</label>
+                                    <input type="text" class="form-control" th:value="${vigencia}" readonly />
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="checkNpEstrategico" name="noProgramada" value="true"
+                                        th:checked="${resumenEstrategico.noProgramada}"
+                                        onchange="toggleInputMeta(this, 'inputMetaEstrategico')" />
+                                    <label class="form-check-label fw-semibold text-secondary" for="checkNpEstrategico">
+                                        Marcar vigencia como No Programada (NP)
+                                    </label>
                         </div>
+
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Meta a Programar para el Año</label>
-                            <input type="number" step="0.01" name="valorProgramado" class="form-control" 
-                                   th:value="${resumenEstrategico.metaAnualProgramada}" placeholder="Ej. 500" required />
+                                <label class="form-label fw-semibold">Meta a Programar para el Año</label>
+                                <input type="number" step="0.01" id="inputMetaEstrategico" name="valorProgramado" class="form-control" 
+                                    th:value="${resumenEstrategico.metaAnualProgramada}" 
+                                    th:disabled="${resumenEstrategico.noProgramada}"
+                                    placeholder="Ej. 500" required />
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -198,7 +216,9 @@
     <!-- Historial de Avances Reportados Meta Producto -->
     <div th:if="${metaProducto != null}" class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white py-3">
-            <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Historial de Reportes Meta Producto</h5>
+            <h5 class="fw-bold mb-0">
+                <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Historial de Reportes Meta Producto (<span th:text="${vigencia}">2026</span>)
+            </h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -214,10 +234,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:if="${metaProducto.avances == null or metaProducto.avances.isEmpty()}">
-                            <td colspan="6" class="text-center text-muted py-3">No hay avances reportados para esta meta aún.</td>
+                        <tr th:if="${resumenEstrategico.avancesVigencia == null or resumenEstrategico.avancesVigencia.isEmpty()}">
+                            <td colspan="6" class="text-center text-muted py-3">No hay avances reportados para esta meta en este periodo.</td>
                         </tr>
-                        <tr th:each="av : ${metaProducto.avances}">
+                        <tr th:each="av : ${resumenEstrategico.avancesVigencia}">
                             <td class="fw-bold" th:text="${av.vigencia}">2026</td>
                             <td>
                                 <span class="fw-semibold" th:switch="${av.mes}">
@@ -237,7 +257,7 @@
                             </td>
                             <td><span class="badge bg-secondary" th:text="'T' + ${av.trimestre}">T1</span></td>
                             <td class="text-success fw-bold" th:text="${av.valorLogrado}">100</td>
-                            <td class="small" th:text="${av.observaciones != null ? av.observaciones : 'Sin observaciones'}">Obs</td>
+                            <td class="small" th:text="${av.observaciones != null and !av.observaciones.isEmpty() ? av.observaciones : 'Sin observaciones'}">Obs</td>
                             <td class="small text-muted" th:text="${#temporals.format(av.fechaReporte, 'yyyy-MM-dd HH:mm')}">2026-11-06</td>
                         </tr>
                     </tbody>
@@ -281,7 +301,7 @@
                 </div>
                 
                 <div class="card-body">
-                    <!-- Fila 1: Metas e Indicadores Principales -->
+<!-- Fila 1: Metas e Indicadores Principales -->
                     <div class="row g-3 align-items-center mb-3">
                         <div class="col-md-3">
                             <div class="small text-muted text-uppercase fw-bold">Meta Cuatrienio</div>
@@ -289,7 +309,11 @@
                         </div>
                         <div class="col-md-3">
                             <div class="small text-muted text-uppercase fw-bold" th:text="'Meta Anual (' + ${vigencia} + ')'">Meta Anual</div>
-                            <div class="fs-6 fw-bold text-success" th:text="${act.metaAnualProgramada + ' ' + act.unidadMedida}">0</div>
+                            <div th:if="${act.noProgramada}" class="fs-6 fw-bold text-secondary">
+                                <span class="badge bg-secondary">NP (No Programada)</span>
+                            </div>
+                            <div th:unless="${act.noProgramada}" class="fs-6 fw-bold text-success" 
+                                 th:text="${act.metaAnualProgramada + ' ' + act.unidadMedida}">0</div>
                         </div>
                         <div class="col-md-3">
                             <div class="small text-muted text-uppercase fw-bold" th:text="'Línea Base (' + ${vigencia} + ')'">Línea Base</div>
@@ -305,7 +329,10 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <div class="small text-muted text-uppercase fw-bold mb-1">% Cumplimiento Anual (<span th:text="${vigencia}">2024</span>)</div>
-                            <div class="progress" style="height: 18px;">
+                            <div th:if="${act.noProgramada}" class="progress" style="height: 18px;">
+                                <div class="progress-bar bg-secondary fw-bold" role="progressbar" style="width: 100%;">No Programada (NP)</div>
+                            </div>
+                            <div th:unless="${act.noProgramada}" class="progress" style="height: 18px;">
                                 <div class="progress-bar bg-primary fw-bold" role="progressbar" 
                                      th:style="'width: ' + ${act.porcentajeAnual} + '%'" 
                                      th:text="${act.porcentajeAnual + '%'}">0%</div>
@@ -422,14 +449,24 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="mb-3">
+                            <div class="mb-3">
                                     <label class="form-label fw-semibold">Vigencia / Año</label>
                                     <input type="text" class="form-control" th:value="${vigencia}" readonly />
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Meta a Programar para el Año</label>
-                                    <input type="number" step="0.01" name="valorProgramado" class="form-control" 
-                                           th:value="${act.metaAnualProgramada}" placeholder="Ej. 100" required />
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" th:id="'checkNpAct-' + ${act.id}" name="noProgramada" value="true"
+                                        th:checked="${act.noProgramada}"
+                                        th:onchange="'toggleInputMeta(this, \'inputMetaAct-' + ${act.id} + '\')'" />
+                                    <label class="form-check-label fw-semibold text-secondary" th:for="'checkNpAct-' + ${act.id}">
+                                        Marcar vigencia como No Programada (NP)
+                                    </label>
+                                </div>
+                                <div class="mb-3">                                    
+                                <label class="form-label fw-semibold">Meta a Programar para el Año</label>
+                                        <input type="number" step="0.01" th:id="'inputMetaAct-' + ${act.id}" name="valorProgramado" class="form-control" 
+                                            th:value="${act.metaAnualProgramada}" 
+                                            th:disabled="${act.noProgramada}"
+                                            placeholder="Ej. 100" required />                                           
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -592,6 +629,19 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function toggleInputMeta(checkbox, inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            input.disabled = checkbox.checked;
+            input.required = !checkbox.checked;
+            if (checkbox.checked) {
+                input.value = '';
+            }
+        }
+    </script>
+
 </section>
 </body>
 </html>

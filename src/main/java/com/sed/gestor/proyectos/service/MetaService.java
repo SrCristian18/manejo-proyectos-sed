@@ -1,12 +1,10 @@
 package com.sed.gestor.proyectos.service;
 
-import com.sed.gestor.proyectos.dto.ActividadAvanceDTO;
 import com.sed.gestor.proyectos.dto.ActividadResumenDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO;
 import com.sed.gestor.proyectos.dto.DashboardProyectoDTO.MetaResumenDTO;
 import com.sed.gestor.proyectos.dto.MetaEstrategicoResumenDTO;
 import com.sed.gestor.proyectos.dto.MetaProductoDTO;
-import com.sed.gestor.proyectos.dto.ReporteTrimestralProyectoFormDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.ActividadMetaAnual;
 import com.sed.gestor.proyectos.model.AvanceActividad;
@@ -34,8 +32,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -223,9 +222,18 @@ public class MetaService {
         BigDecimal lineaBase = metaProducto.getLineaBase() != null ? BigDecimal.valueOf(metaProducto.getLineaBase()) : BigDecimal.ZERO;
         BigDecimal metaCuatrienio = metaProducto.getMetaCuatrienio() != null ? BigDecimal.valueOf(metaProducto.getMetaCuatrienio()) : BigDecimal.ZERO;
 
-        BigDecimal metaAnualProg = metaAnualRepository.findByMetaProductoIdAndVigencia(metaProducto.getId(), vigenciaSeleccionada)
+        Optional<MetaAnual> metaAnualOpt = metaAnualRepository
+            .findByMetaProductoIdAndVigencia(metaProducto.getId(), vigenciaSeleccionada);
+
+        boolean esNoProgramada = metaAnualOpt.map(MetaAnual::isNoProgramada).orElse(false);
+            BigDecimal metaAnualProg = (!esNoProgramada && metaAnualOpt.isPresent())
+                ? metaAnualOpt.get().getValorProgramado()
+                : BigDecimal.ZERO;
+        
+        /*BigDecimal metaAnualProg = metaAnualRepository.findByMetaProductoIdAndVigencia(metaProducto.getId(), vigenciaSeleccionada)
                 .map(MetaAnual::getValorProgramado)
                 .orElse(BigDecimal.ZERO);
+        */
 
         BigDecimal acumuladoAnterior = BigDecimal.ZERO;
         BigDecimal avanceAnual = BigDecimal.ZERO;
@@ -318,16 +326,27 @@ public class MetaService {
         dto.setTrimestre2(t2);
         dto.setTrimestre3(t3);
         dto.setTrimestre4(t4);
+        dto.setNoProgramada(esNoProgramada);
+
+        List<AvanceMeta> avancesDelAnio = allAvances.stream()
+            .filter(av -> vigenciaSeleccionada.equals(av.getVigencia()))
+            .sorted(Comparator.comparing(AvanceMeta::getMes, Comparator.nullsLast(Comparator.naturalOrder())))
+            .collect(Collectors.toList());
+        dto.setAvancesVigencia(avancesDelAnio);
 
         return dto;
     }
 
     @Transactional
-    public void guardarMetaAnual(Long metaProductoId, Integer vigencia, BigDecimal valorProgramado) {
+    public void guardarMetaAnual(Long metaProductoId, Integer vigencia, BigDecimal valorProgramado, boolean noProgramada) {
         MetaProducto meta = obtenerMetaProductoPorId(metaProductoId);
         MetaAnual metaAnual = metaAnualRepository.findByMetaProductoIdAndVigencia(metaProductoId, vigencia)
-                .orElseGet(() -> new MetaAnual(meta, vigencia, valorProgramado));
-        metaAnual.setValorProgramado(valorProgramado);
+                .orElseGet(() -> new MetaAnual(meta, vigencia, BigDecimal.ZERO));
+
+        metaAnual.setNoProgramada(noProgramada);
+        if (!noProgramada) {
+            metaAnual.setValorProgramado(valorProgramado != null ? valorProgramado : BigDecimal.ZERO);
+        }
         metaAnualRepository.save(metaAnual);
     }
 
@@ -361,11 +380,20 @@ public class MetaService {
         for (Actividad act : actividades) {
             BigDecimal metaCuatrienio = act.getMetaCuatrienio() != null ? act.getMetaCuatrienio() : BigDecimal.ZERO;
             
+            Optional<ActividadMetaAnual> actMetaAnualOpt = actividadMetaAnualRepository
+                .findByActividadIdAndVigencia(act.getId(), vigenciaSeleccionada);
+
+            boolean esNoProgramada = actMetaAnualOpt.map(ActividadMetaAnual::isNoProgramada).orElse(false);
+                BigDecimal metaAnualProg = (!esNoProgramada && actMetaAnualOpt.isPresent())
+                    ? actMetaAnualOpt.get().getValorProgramado()
+                    : BigDecimal.ZERO;
+
+            /*
             // Meta anual programada para la actividad en la vigencia seleccionada
             BigDecimal metaAnualProg = actividadMetaAnualRepository.findByActividadIdAndVigencia(act.getId(), vigenciaSeleccionada)
                     .map(ActividadMetaAnual::getValorProgramado)
                     .orElse(BigDecimal.ZERO);
-
+            */
             List<AvanceActividad> allAvances = act.getAvances() != null ? act.getAvances() : new ArrayList<>();
 
             BigDecimal acumuladoAnterior = BigDecimal.ZERO;
@@ -445,7 +473,11 @@ public class MetaService {
             dto.setTrimestre2(t2);
             dto.setTrimestre3(t3);
             dto.setTrimestre4(t4);
-            dto.setAvances(allAvances.stream().filter(a -> vigenciaSeleccionada.equals(a.getVigencia())).collect(Collectors.toList()));
+            dto.setNoProgramada(esNoProgramada);
+            dto.setAvances(allAvances.stream()
+                .filter(a -> vigenciaSeleccionada.equals(a.getVigencia()))
+                .sorted(Comparator.comparing(AvanceActividad::getMes,Comparator.nullsLast(Comparator.naturalOrder())))
+                .collect(Collectors.toList()));
 
             resumenes.add(dto);
         }
@@ -454,12 +486,16 @@ public class MetaService {
     }
 
     @Transactional
-    public void guardarActividadMetaAnual(Long actividadId, Integer vigencia, BigDecimal valorProgramado) {
+    public void guardarActividadMetaAnual(Long actividadId, Integer vigencia, BigDecimal valorProgramado, boolean noProgramada) {
         Actividad act = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada"));
         ActividadMetaAnual metaAnual = actividadMetaAnualRepository.findByActividadIdAndVigencia(actividadId, vigencia)
-                .orElseGet(() -> new ActividadMetaAnual(act, vigencia, valorProgramado));
-        metaAnual.setValorProgramado(valorProgramado);
+                .orElseGet(() -> new ActividadMetaAnual(act, vigencia, BigDecimal.ZERO));
+
+        metaAnual.setNoProgramada(noProgramada);
+        if (!noProgramada) {
+            metaAnual.setValorProgramado(valorProgramado != null ? valorProgramado : BigDecimal.ZERO);
+        }
         actividadMetaAnualRepository.save(metaAnual);
     }
 
