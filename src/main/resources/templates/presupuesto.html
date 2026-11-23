@@ -3,10 +3,10 @@
       th:replace="~{layout :: main-layout('Seguimiento Presupuestal', ~{::section})}">
 <body>
 <section>
-    <!-- Cabecera Principal con Filtros y Botón de Ajustar Costos (Actualizar Proyecto) -->
+    <!-- Cabecera Principal con Filtros -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-            <h3 class="fw-bold mb-0"><i class="fa-solid fa-wallet text-primary me-2"></i>Distribución presupuestal</h3>
+            <h3 class="fw-bold mb-0"><i class="fa-solid fa-wallet text-primary me-2"></i>Distribución y Seguimiento Presupuestal</h3>
             <p class="text-muted mb-0">Proyecto: <span class="fw-bold text-dark" th:text="${proyecto != null ? proyecto.nombre : 'Sin Selección'}"></span></p>
         </div>
 
@@ -20,7 +20,7 @@
                     <option value="2027" th:selected="${vigencia == 2027}">2027</option>
                 </select>
 
-                <!-- Selector de Proyecto por Vigencia -->
+                <!-- Selector de Proyecto -->
                 <select name="proyectoId" class="form-select fw-semibold" onchange="this.form.submit()" style="min-width: 280px;">
                     <option value="" disabled th:if="${proyectos == null or proyectos.isEmpty()}">Sin proyectos en esta vigencia</option>
                     <option th:each="p : ${proyectos}" 
@@ -30,33 +30,80 @@
                     </option>
                 </select>
             </form>
-
-            <!-- Botón Naranja Reintegrado: Actualizar Proyecto / Ajustar Costos -->
-            <button class="btn btn-warning text-dark fw-bold text-nowrap" data-bs-toggle="modal" data-bs-target="#modalActualizarProyecto">
-                <i class="fa-solid fa-pen-to-square me-1"></i> Actualizar proyecto (Ajustar costos)
-            </button>
         </div>
     </div>
 
-    <!-- Tabla de Actividades y Saldos -->
+    <!-- Tarjeta Resumen Global del Proyecto (Agregación de Actividades) -->
+    <div th:if="${proyecto != null}" class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-sack-dollar text-success me-2"></i>Consolidado Presupuestal del Proyecto
+            </h5>
+            <span class="badge bg-primary-subtle text-primary font-monospace" th:text="'BPIN: ' + ${proyecto.codigoBpin}">BPIN</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 text-center">
+                <div class="col-md-2 col-sm-6">
+                    <div class="p-3 rounded bg-light border h-100">
+                        <div class="small text-muted text-uppercase fw-bold mb-1">Valor Total Proyecto (Inicial)</div>
+                        <div class="fs-5 fw-bold text-dark" 
+                             th:text="${'$' + #numbers.formatDecimal(resumenProyecto.valorTotalInicial, 1, 'POINT', 0, 'COMMA')}">$0</div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-6">
+                    <div class="p-3 rounded bg-light border h-100">
+                        <div class="small text-muted text-uppercase fw-bold mb-1">Total Modificado</div>
+                        <div class="fs-5 fw-bold" 
+                             th:classappend="${resumenProyecto.totalModificado.compareTo(T(java.math.BigDecimal).ZERO) >= 0 ? 'text-primary' : 'text-danger'}"
+                             th:text="${(resumenProyecto.totalModificado.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '+' : '') + '$' + #numbers.formatDecimal(resumenProyecto.totalModificado, 1, 'POINT', 0, 'COMMA')}">$0</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-3 rounded bg-light border h-100">
+                        <div class="small text-muted text-uppercase fw-bold mb-1">Apropiación Definitiva</div>
+                        <div class="fs-5 fw-bold text-dark" 
+                             th:text="${'$' + #numbers.formatDecimal(resumenProyecto.valorTotalDefinitivo, 1, 'POINT', 0, 'COMMA')}">$0</div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-6">
+                    <div class="p-3 rounded bg-danger bg-opacity-10 border border-danger border-opacity-25 h-100">
+                        <div class="small text-danger text-uppercase fw-bold mb-1">Total Gastado</div>
+                        <div class="fs-5 fw-bold text-danger" 
+                             th:text="${'$' + #numbers.formatDecimal(resumenProyecto.totalGastado, 1, 'POINT', 0, 'COMMA')}">$0</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-12">
+                    <div class="p-3 rounded bg-success bg-opacity-10 border border-success border-opacity-25 h-100">
+                        <div class="small text-success text-uppercase fw-bold mb-1">Total Disponible</div>
+                        <div class="fs-5 fw-bold text-success" 
+                             th:text="${'$' + #numbers.formatDecimal(resumenProyecto.totalDisponible, 1, 'POINT', 0, 'COMMA')}">$0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Actividades y Saldos por Fuente -->
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calculator text-primary me-2"></i>Saldos disponibles por actividad</h5>
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calculator text-primary me-2"></i>Saldos y Ejecución por Actividad</h5>
+            <span class="small text-muted"><i class="fa-solid fa-hand-pointer me-1"></i>Haga clic en la barra de <strong>% Ejecución</strong> para ver el detalle por rubros</span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle mb-0" style="font-size: 0.88rem;">
+                <table class="table table-bordered table-hover align-middle mb-0" style="font-size: 0.85rem;">
                     <thead class="table-light text-center align-middle">
                         <tr>
-                            <th rowspan="2" class="text-start">Actividad (Hito)</th>
-                            <th th:each="f : ${fuentes}" colspan="2" class="fw-bold text-uppercase bg-light-subtle" th:text="${f.etiqueta}">FUENTE</th>
-                            <th rowspan="2" class="text-end bg-light fw-bold">Total Disponible($)</th>
-                            <th rowspan="2" style="width: 120px;">% Ejecución</th>
-                            <th rowspan="2" style="width: 140px;">Acciones</th>
+                            <th rowspan="2" class="text-start" style="min-width: 230px;">Actividad (Hito)</th>
+                            <th th:each="f : ${fuentes}" colspan="3" class="fw-bold text-uppercase bg-light-subtle" th:text="${f.etiqueta}">FUENTE</th>
+                            <th rowspan="2" class="text-end bg-light fw-bold">Total Disponible ($)</th>
+                            <th rowspan="2" style="width: 135px;">% Ejecución</th>
+                            <th rowspan="2" style="width: 175px;">Acciones</th>
                         </tr>
                         <tr>
                             <th:block th:each="f : ${fuentes}">
-                                <th class="text-end small">Aprop. Definitiva</th>
+                                <th class="text-end small">Inicial</th>
+                                <th class="text-end small text-danger">Gastado</th>
                                 <th class="text-end small text-success">Disponible</th>
                             </th:block>
                         </tr>
@@ -65,10 +112,12 @@
                         <tr th:each="item : ${resumenPresupuestal}">
                             <td class="fw-semibold text-dark" th:text="${item.nombreActividad}">Actividad</td>
                             
-                            <!-- Columnas por Fuente -->
+                            <!-- 3 Columnas dinámicas por Fuente: Inicial, Gastado, Disponible -->
                             <th:block th:each="f : ${fuentes}">
                                 <td class="text-end" 
-                                    th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).apropiacionDefinitiva, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                                    th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).apropiacionInicial, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                                <td class="text-end text-danger" 
+                                    th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).ejecutado, 1, 'POINT', 0, 'COMMA')}">$0</td>
                                 <td class="text-end fw-bold text-success" 
                                     th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).saldoDisponible, 1, 'POINT', 0, 'COMMA')}">$0</td>
                             </th:block>
@@ -77,44 +126,57 @@
                             <td class="text-end fw-bold fs-6 bg-light" 
                                 th:text="${'$' + #numbers.formatDecimal(item.disponibleTotal, 1, 'POINT', 0, 'COMMA')}">$0</td>
 
-                            <!-- Columna % Ejecución -->
+                            <!-- Columna % Ejecución (Acción navegable al detalle de rubros) -->
                             <td>
-                                <div class="progress" style="height: 18px;">
-                                    <div class="progress-bar bg-info text-dark fw-bold" 
-                                         role="progressbar" 
-                                         th:style="'width: ' + ${item.porcentajeEjecucion} + '%'"
-                                         th:text="${item.porcentajeEjecucion + '%'}">0%</div>
-                                </div>
+                                <a th:href="@{/presupuesto/actividad/{id}/ejecucion-rubros(id=${item.actividadId}, proyectoId=${proyecto.id})}" 
+                                   class="text-decoration-none d-block" 
+                                   title="Ver detalle de ejecución por rubros y periodos">
+                                    <div class="progress border" style="height: 20px; cursor: pointer;">
+                                        <div class="progress-bar bg-info text-dark fw-bold" 
+                                             role="progressbar" 
+                                             th:style="'width: ' + ${item.porcentajeEjecucion} + '%'"
+                                             th:text="${item.porcentajeEjecucion + '%'}">0%</div>
+                                    </div>
+                                </a>
                             </td>
 
-                            <!-- Tres Acciones por Actividad -->
+                            <!-- 4 Acciones por Actividad -->
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <!-- 1. Ver Composición de Rubros de Gasto -->
+                                    <!-- 1. Composición de Rubros -->
                                     <button class="btn btn-outline-secondary" 
                                             th:onclick="abrirModalRubros([[${item.actividadId}]], [[${item.nombreActividad}]])" 
-                                            title="Ver Composición de Rubros">
+                                            title="1. Composición de Rubros de Gasto">
                                         <i class="fa-solid fa-list"></i>
                                     </button>
 
-                                    <!-- 2. Ver Trazabilidad CDP / RP -->
+                                    <!-- 2. Ejecutar Presupuesto (CDP / RP) -->
+                                    <button class="btn btn-outline-primary" 
+                                            th:onclick="abrirModalEjecutarMovimiento([[${item.actividadId}]], [[${item.nombreActividad}]])" 
+                                            title="2. Ejecutar Presupuesto (CDP / RP)">
+                                        <i class="fa-solid fa-file-signature"></i>
+                                    </button>
+
+                                    <!-- 3. Trazabilidad / Historial -->
                                     <a th:href="@{/presupuesto/trazabilidad(actividadId=${item.actividadId})}" 
                                        class="btn btn-outline-info" 
-                                       title="Ver Trazabilidad CDP / RP">
+                                       title="3. Historial y Trazabilidad">
                                         <i class="fa-solid fa-clock-rotate-left"></i>
                                     </a>
 
-                                    <!-- 3. Ejecutar CDP / RP / Registrar Movimiento -->
-                                    <button class="btn btn-outline-primary" 
-                                            th:onclick="abrirModalEjecutarMovimiento([[${item.actividadId}]], [[${item.nombreActividad}]])" 
-                                            title="Ejecutar CDP / RP de esta Actividad">
-                                        <i class="fa-solid fa-file-signature"></i>
+                                    <!-- 4. Actualizar Actividad (13 Operaciones PTDG101-F004) -->
+                                    <button class="btn btn-outline-warning text-dark" 
+                                            th:onclick="abrirModalActualizarActividad([[${item.actividadId}]], [[${item.nombreActividad}]])" 
+                                            title="4. Actualizar Actividad (Modificaciones / Ajustes)">
+                                        <i class="fa-solid fa-sliders"></i>
                                     </button>
                                 </div>
                             </td>
                         </tr>
                         <tr th:if="${resumenPresupuestal == null or resumenPresupuestal.isEmpty()}">
-                            <td colspan="9" class="text-center text-muted py-4">No hay actividades registradas para este proyecto.</td>
+                            <td th:colspan="${4 + (fuentes.length * 3)}" class="text-center text-muted py-4">
+                                No hay actividades registradas para este proyecto.
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -146,7 +208,6 @@
                         </table>
                     </div>
 
-                    <!-- Formulario para agregar un nuevo rubro -->
                     <div class="card p-3 border-light bg-light">
                         <h6 class="fw-bold mb-2"><i class="fa-solid fa-plus me-1 text-success"></i>Agregar Concepto de Gasto</h6>
                         <div class="mb-2">
@@ -164,13 +225,13 @@
         </div>
     </div>
 
-    <!-- MODAL 2: Ejecutar CDP / RP / Registrar Movimiento por Actividad -->
+    <!-- MODAL 2: Ejecutar Presupuesto (Depurado exclusivamente a CDP / RP) -->
     <div class="modal fade" id="modalMovimiento" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title fw-bold">
-                        <i class="fa-solid fa-file-signature me-2"></i>Ejecutar Presupuesto (CDP / RP / Modificación)
+                        <i class="fa-solid fa-file-signature me-2"></i>Ejecutar Presupuesto (CDP / RP)
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -178,6 +239,7 @@
                     <div class="modal-body">
                         <input type="hidden" id="proyectoId" th:value="${proyecto != null ? proyecto.id : ''}">
                         <input type="hidden" id="actividadIdModal">
+                        <input type="hidden" id="tipoMovimiento" value="EJECUCION_CDP_RP">
 
                         <div class="alert alert-info py-2 mb-3">
                             <i class="fa-solid fa-info-circle me-1"></i>
@@ -186,27 +248,21 @@
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">Tipo de Movimiento</label>
-                                <select class="form-select" id="tipoMovimiento" required>
-                                    <option th:each="tipo : ${tiposMovimiento}" th:value="${tipo}" th:text="${tipo}"></option>
-                                </select>
+                                <label class="form-label fw-bold">N° Registro CDP / RP</label>
+                                <input type="text" class="form-control" id="numeroDecreto" placeholder="Ej: CDP-2026-042 / RP-2026-110" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">Nº Decreto / Acto / Registro</label>
-                                <input type="text" class="form-control" id="numeroDecreto" placeholder="Ej: CDP-2026-042 o Decreto 304" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Fuente Financiación</label>
+                                <label class="form-label fw-bold">Fuente de Financiación</label>
                                 <select class="form-select" id="fuente" required>
                                     <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}"></option>
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">Monto ($)</label>
-                                <input type="number" step="0.01" class="form-control" id="monto" placeholder="Ej: 50000000" required>
+                                <label class="form-label fw-bold">Monto a Ejecutar ($)</label>
+                                <input type="number" step="0.01" min="1" class="form-control" id="monto" placeholder="Ej: 50000000" required>
                             </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-bold">Documento Soporte (Opcional - PDF / Decreto / Firma)</label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Documento Soporte (PDF / Firma)</label>
                                 <input type="file" id="archivoSoporteMovimiento" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
                             </div>
                         </div>
@@ -222,85 +278,80 @@
         </div>
     </div>
 
-    <!-- MODAL 3: Actualizar Proyecto (Ajuste Global de Costos) -->
-    <div class="modal fade" id="modalActualizarProyecto" tabindex="-1">
-        <div class="modal-dialog modal-xl">
+    <!-- MODAL 4: Actualizar Actividad (13 Operaciones PTDG101-F004) -->
+    <div class="modal fade" id="modalActualizarActividad" tabindex="-1">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-warning-subtle">
                     <h5 class="modal-title fw-bold text-dark">
-                        <i class="fa-solid fa-sliders me-2"></i>Actualización de Proyecto
+                        <i class="fa-solid fa-sliders me-2"></i>Actualización de Actividad (Formato PTDG101-F004)
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="formActualizarProyecto">
+                <form id="formActualizarActividad">
                     <div class="modal-body">
-                        <input type="hidden" id="proyectoIdActualizar" th:value="${proyecto != null ? proyecto.id : ''}">
+                        <input type="hidden" id="proyectoIdActActualizar" th:value="${proyecto != null ? proyecto.id : ''}">
+                        <input type="hidden" id="actividadIdActualizar">
 
-                        <!-- Acto Administrativo de Soporte -->
-                        <div class="row g-3 mb-4 bg-light p-3 rounded">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Nº Decreto / Acto Administrativo</label>
-                                <input type="text" id="decretoActualizacion" class="form-control" placeholder="Ej: Decreto No. 0450" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Documento Soporte (PDF)</label>
-                                <input type="file" id="archivoSoporte" class="form-control" accept=".pdf">
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-bold">Observaciones / Justificación</label>
-                                <input type="text" id="justificacionActualizacion" class="form-control" placeholder="Ingrese las observaciones de la actualización">
-                            </div>
+                        <div class="alert alert-warning py-2 mb-3">
+                            <i class="fa-solid fa-layer-group me-1"></i>
+                            <strong>Actividad seleccionada:</strong> <span id="nombreActividadActualizarTexto" class="fw-bold"></span>
                         </div>
 
-                        <!-- Tabla de Ajuste de Costos por Actividad -->
-                        <h6 class="fw-bold mb-3"><i class="fa-solid fa-table me-2"></i>Ajuste de Costos por Actividad</h6>
-                        <div class="table-responsive">
-                            <table class="table table-bordered align-middle" style="font-size: 0.88rem;">
-                                <thead class="table-dark text-center">
-                                    <tr>
-                                        <th>Actividad</th>
-                                        <th>Fuente</th>
-                                        <th style="width: 180px;">Costo Inicial ($)</th>
-                                        <th style="width: 200px;">Costo Ajustado ($)</th>
-                                        <th style="width: 180px;">Cambio en el Costo ($)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="act, stat : ${actividades}">
-                                        <td class="fw-semibold" th:text="${act.nombre}">Actividad</td>
-                                        <td>
-                                            <select class="form-select form-select-sm fuente-ajuste" th:data-index="${stat.index}">
-                                                <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}"></option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <input type="text" class="form-control form-control-sm text-end bg-light costo-inicial" 
-                                                   th:value="${#numbers.formatDecimal(act.presupuestoInicial != null ? act.presupuestoInicial : 0, 1, 'POINT', 0, 'COMMA')}" readonly 
-                                                   th:data-actividad-id="${act.id}"
-                                                   th:data-raw-inicial="${act.presupuestoInicial != null ? act.presupuestoInicial : 0}">
-                                        </td>
-                                        <td>
-                                            <input type="number" step="0.01" class="form-control form-control-sm text-end fw-bold costo-ajustado" 
-                                                   th:value="${act.presupuestoInicial != null ? act.presupuestoInicial : 0}" 
-                                                   th:data-index="${stat.index}"
-                                                   oninput="calcularVariacionCosto(this)">
-                                        </td>
-                                        <td>
-                                            <input type="text" class="form-control form-control-sm text-end fw-bold bg-light cambio-costo" 
-                                                   value="$0" readonly th:id="'cambioCosto_' + ${stat.index}">
-                                        </td>
-                                    </tr>
-                                    <tr th:if="${actividades == null or actividades.isEmpty()}">
-                                        <td colspan="5" class="text-center text-muted py-3">No hay actividades para ajustar en este proyecto.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="row g-3">
+                            <!-- Selector de las 13 Operaciones Oficiales -->
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Operación / Variable a Modificar (13 Operaciones)</label>
+                                <select class="form-select fw-semibold" id="operacionActualizacion" required>
+                                    <option th:each="op : ${operacionesActualizacion}" 
+                                            th:value="${op}" 
+                                            th:text="${op.habilitada ? op.etiqueta : op.etiqueta + ' (Próximamente)'}"
+                                            th:disabled="${!op.habilitada}"
+                                            th:selected="${op.habilitada}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">N° Decreto / Acto Administrativo</label>
+                                <input type="text" id="decretoActividad" class="form-control" placeholder="Ej: Decreto No. 0131 de 2026" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Fuente de Financiación Afectada</label>
+                                <select class="form-select" id="fuenteActividadActualizar" required>
+                                    <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}"></option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tipo de Variación de Costo</label>
+                                <select class="form-select" id="tipoAjusteActividad" required>
+                                    <option value="ADICION">Aumento / Adición (+) al presupuesto</option>
+                                    <option value="REDUCCION">Reducción / Liberación (-) del presupuesto</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Valor del Ajuste ($)</label>
+                                <input type="number" step="0.01" min="1" id="montoAjusteActividad" class="form-control" placeholder="Ej: 20000000" required>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Observaciones / Justificación Técnica y Financiera</label>
+                                <textarea id="observacionesActividadActualizar" class="form-control" rows="2" placeholder="Detalle la razón del ajuste según soporte administrativo..."></textarea>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Documento Soporte (PDF)</label>
+                                <input type="file" id="archivoSoporteActividad" class="form-control" accept=".pdf">
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-warning fw-bold text-dark" onclick="enviarActualizacionCostos()">
-                            <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Actualización
+                        <button type="button" class="btn btn-warning fw-bold text-dark" onclick="enviarActualizacionActividad()">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Aplicar Actualización
                         </button>
                     </div>
                 </form>
@@ -308,11 +359,11 @@
         </div>
     </div>
 
-    <!-- Scripts JavaScript Completo -->
+    <!-- Scripts JavaScript -->
     <script>
         let actividadActualId = null;
 
-        // 1. Lógica Modal Composición de Rubros
+        // 1. Composición de Rubros
         function abrirModalRubros(actividadId, nombreActividad) {
             actividadActualId = actividadId;
             document.getElementById('modalRubrosTitulo').textContent = 'Composición de Rubros - ' + nombreActividad;
@@ -341,8 +392,7 @@
                         tbody.appendChild(tr);
                     });
                 })
-                .catch(err => {
-                    console.error("Error al cargar rubros:", err);
+                .catch(() => {
                     tbody.innerHTML = '<tr><td colspan="2" class="text-center text-danger">Error al obtener rubros.</td></tr>';
                 });
         }
@@ -370,7 +420,7 @@
             .catch(err => alert("Error al guardar rubro: " + err.message));
         }
 
-        // 2. Lógica Modal Ejecutar CDP / RP por Actividad
+        // 2. Ejecutar CDP / RP
         function abrirModalEjecutarMovimiento(actividadId, nombreActividad) {
             document.getElementById('actividadIdModal').value = actividadId;
             document.getElementById('nombreActividadModalTexto').textContent = nombreActividad;
@@ -391,7 +441,7 @@
             const archivoSoporte = document.getElementById('archivoSoporteMovimiento').files[0];
 
             if (!numeroDecreto || !monto) {
-                alert("Por favor ingrese el número de acto/decreto y el monto.");
+                alert("Por favor ingrese el número de CDP/RP y el monto a ejecutar.");
                 return;
             }
 
@@ -411,77 +461,67 @@
                 body: formData
             })
             .then(res => {
-                if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje || "Error al registrar movimiento"); });
+                if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje || "Error al registrar ejecución"); });
                 return res.json();
             })
             .then(data => {
-                alert(data.mensaje || "Movimiento registrado exitosamente");
+                alert(data.mensaje || "Ejecución registrada exitosamente.");
                 location.reload();
             })
             .catch(err => alert("Error: " + err.message));
         }
 
-        // 3. Lógica Modal Actualización / Ajuste de Costos
-        function calcularVariacionCosto(input) {
-            const index = input.getAttribute('data-index');
-            const fila = input.closest('tr');
-            const inicial = parseFloat(fila.querySelector('.costo-inicial').getAttribute('data-raw-inicial')) || 0;
-            const ajustado = parseFloat(input.value) || 0;
-            const variacion = ajustado - inicial;
+        // 4. Actualizar Actividad (13 Operaciones)
+        function abrirModalActualizarActividad(actividadId, nombreActividad) {
+            document.getElementById('actividadIdActualizar').value = actividadId;
+            document.getElementById('nombreActividadActualizarTexto').textContent = nombreActividad;
+            document.getElementById('decretoActividad').value = '';
+            document.getElementById('montoAjusteActividad').value = '';
+            document.getElementById('observacionesActividadActualizar').value = '';
 
-            const inputCambio = document.getElementById('cambioCosto_' + index);
-            inputCambio.value = (variacion >= 0 ? '+$' : '-$') + Math.abs(variacion).toLocaleString('es-CO');
-            inputCambio.className = 'form-control form-control-sm text-end fw-bold ' + (variacion >= 0 ? 'text-success' : 'text-danger');
+            const modal = new bootstrap.Modal(document.getElementById('modalActualizarActividad'));
+            modal.show();
         }
 
-        function enviarActualizacionCostos() {
-            const proyectoId = document.getElementById('proyectoIdActualizar').value;
-            const numeroDecreto = document.getElementById('decretoActualizacion').value;
-            const justificacion = document.getElementById('justificacionActualizacion').value;
+        function enviarActualizacionActividad() {
+            const proyectoId = document.getElementById('proyectoIdActActualizar').value;
+            const actividadId = document.getElementById('actividadIdActualizar').value;
+            const operacion = document.getElementById('operacionActualizacion').value;
+            const numeroDecreto = document.getElementById('decretoActividad').value;
+            const fuente = document.getElementById('fuenteActividadActualizar').value;
+            const tipoAjuste = document.getElementById('tipoAjusteActividad').value;
+            const monto = document.getElementById('montoAjusteActividad').value;
+            const observaciones = document.getElementById('observacionesActividadActualizar').value;
+            const archivoSoporte = document.getElementById('archivoSoporteActividad').files[0];
 
-            if (!numeroDecreto) {
-                alert("Por favor ingrese el número de decreto o acto administrativo de soporte.");
+            if (!numeroDecreto || !monto) {
+                alert("Por favor ingrese el número de acto administrativo y el valor del ajuste.");
                 return;
             }
 
-            const ajustes = [];
-            const filas = document.querySelectorAll('#modalActualizarProyecto tbody tr');
+            const formData = new FormData();
+            formData.append('proyectoId', proyectoId);
+            formData.append('actividadId', actividadId);
+            formData.append('operacion', operacion);
+            formData.append('numeroDecreto', numeroDecreto);
+            formData.append('fuente', fuente);
+            formData.append('tipoAjuste', tipoAjuste);
+            formData.append('monto', monto);
+            formData.append('observaciones', observaciones);
+            if (archivoSoporte) {
+                formData.append('archivoSoporte', archivoSoporte);
+            }
 
-            filas.forEach(f => {
-                const inputInicial = f.querySelector('.costo-inicial');
-                if (!inputInicial) return;
-
-                const actividadId = inputInicial.getAttribute('data-actividad-id');
-                const costoInicial = parseFloat(inputInicial.getAttribute('data-raw-inicial')) || 0;
-                const fuente = f.querySelector('.fuente-ajuste').value;
-                const costoAjustado = parseFloat(f.querySelector('.costo-ajustado').value) || 0;
-
-                ajustes.push({
-                    actividadId: actividadId,
-                    fuente: fuente,
-                    costoInicial: costoInicial,
-                    costoAjustado: costoAjustado
-                });
-            });
-
-            const body = {
-                proyectoId: proyectoId,
-                numeroDecreto: numeroDecreto,
-                justificacion: justificacion,
-                ajustes: ajustes
-            };
-
-            fetch('/api/proyecto/actualizar-costos', {
+            fetch('/api/presupuesto/actividad/actualizar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: formData
             })
             .then(res => {
-                if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje || "Error al guardar actualización"); });
+                if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje || "Error al aplicar actualización"); });
                 return res.json();
             })
             .then(data => {
-                alert(data.mensaje || "Actualización guardada correctamente");
+                alert(data.mensaje || "Actualización aplicada correctamente.");
                 location.reload();
             })
             .catch(err => alert("Error: " + err.message));

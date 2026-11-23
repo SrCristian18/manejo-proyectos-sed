@@ -26,6 +26,7 @@ import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
 import com.sed.gestor.proyectos.model.Proyecto;
 import com.sed.gestor.proyectos.model.RubroGasto;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
+import com.sed.gestor.proyectos.model.enums.OperacionActualizacion;
 import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
 import com.sed.gestor.proyectos.repository.ActividadRepository;
 import com.sed.gestor.proyectos.repository.DocumentoSoporteRepository;
@@ -169,5 +170,47 @@ public class PresupuestoController {
         response.put("status", "success");
         response.put("mensaje", "Movimiento y soporte registrados correctamente");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    //actividad
+    @PostMapping(value = "/actividad/actualizar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> actualizarActividadPresupuesto(
+            @RequestParam("proyectoId") Long proyectoId,
+            @RequestParam("actividadId") Long actividadId,
+            @RequestParam("operacion") OperacionActualizacion operacion,
+            @RequestParam("numeroDecreto") String numeroDecreto,
+            @RequestParam("fuente") FuenteFinanciacion fuente,
+            @RequestParam("tipoAjuste") String tipoAjuste,
+            @RequestParam("monto") BigDecimal monto,
+            @RequestParam(value = "observaciones", required = false) String observaciones,
+            @RequestParam(value = "archivoSoporte", required = false) MultipartFile archivoSoporte) {
+        try {
+            MovimientoPresupuestal guardado = presupuestoService.procesarActualizacionActividad(
+                    proyectoId, actividadId, operacion, numeroDecreto, fuente, tipoAjuste, monto, observaciones);
+
+            if (archivoSoporte != null && !archivoSoporte.isEmpty()) {
+                String nombreOriginal = archivoSoporte.getOriginalFilename();
+                String rutaAlmacenamiento = "/uploads/" + System.currentTimeMillis() + "_" + nombreOriginal;
+
+                DocumentoSoporte doc = new DocumentoSoporte();
+                doc.setNombreArchivo(nombreOriginal);
+                doc.setRutaArchivo(rutaAlmacenamiento);
+                doc.setTipoContenido(archivoSoporte.getContentType());
+                doc.setFechaCarga(LocalDateTime.now());
+                doc.setMovimiento(guardado);
+
+                documentoSoporteRepository.save(doc);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("mensaje", "Actualización de actividad registrada correctamente.");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("mensaje", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 }

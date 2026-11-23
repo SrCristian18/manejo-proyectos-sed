@@ -7,7 +7,7 @@ import com.sed.gestor.proyectos.dto.MetaProductoDTO;
 import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
 import com.sed.gestor.proyectos.dto.ProyectoDTO;
-import com.sed.gestor.proyectos.dto.SolicitudActualizacionDTO;
+import com.sed.gestor.proyectos.dto.ResumenProyectoPresupuestoDTO;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.LineaEstrategica;
 import com.sed.gestor.proyectos.model.MetaProducto;
@@ -15,17 +15,15 @@ import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
 import com.sed.gestor.proyectos.model.Proyecto;
 import com.sed.gestor.proyectos.model.RubroGasto;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
-import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
+import com.sed.gestor.proyectos.model.enums.OperacionActualizacion;
 import com.sed.gestor.proyectos.repository.ActividadRepository;
 import com.sed.gestor.proyectos.repository.MovimientoPresupuestalRepository;
-import com.sed.gestor.proyectos.repository.ProyectoRepository;
 import com.sed.gestor.proyectos.repository.RubroGastoRepository;
 import com.sed.gestor.proyectos.service.MetaService;
 import com.sed.gestor.proyectos.service.PlanDesarrolloService;
 import com.sed.gestor.proyectos.service.PresupuestoService;
 import com.sed.gestor.proyectos.service.ProyectoService;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +36,6 @@ import java.util.List;
 @Controller
 public class WebController {
 
-    private final ProyectoRepository proyectoRepository;
     private final ActividadRepository actividadRepository;
     private final RubroGastoRepository rubroGastoRepository;
     private final MovimientoPresupuestalRepository movimientoRepository;
@@ -47,13 +44,11 @@ public class WebController {
     private final ProyectoService proyectoService;
     private final PlanDesarrolloService planDesarrolloService;
 
-    public WebController(ProyectoRepository proyectoRepository,
-                         ActividadRepository actividadRepository,
+    public WebController(ActividadRepository actividadRepository,
                          PresupuestoService presupuestoService,
                          MetaService metaService,
                          ProyectoService proyectoService, RubroGastoRepository rubroGastoRepository,
                          MovimientoPresupuestalRepository movimientoRepository, PlanDesarrolloService planDesarrolloService) {
-        this.proyectoRepository = proyectoRepository;
         this.actividadRepository = actividadRepository;
         this.presupuestoService = presupuestoService;
         this.metaService = metaService;
@@ -127,39 +122,42 @@ public class WebController {
     
     //Vista de Seguimiento Presupuestal
     @GetMapping("/presupuesto")
-    public String verPresupuesto(@RequestParam (required = false) Long proyectoId,
-                                 @RequestParam (defaultValue = "2026") Integer vigencia, 
-                                 Model model){
-        List<Proyecto> proyectos = proyectoRepository.findByVigencia(vigencia);
+    public String verPresupuesto(@RequestParam(required = false) Long proyectoId,
+                                 @RequestParam(defaultValue = "2026") Integer vigencia,
+                                 Model model) {
+        List<Proyecto> proyectos = proyectoService.obtenerPorVigencia(vigencia);
         model.addAttribute("proyectos", proyectos);
         model.addAttribute("vigencia", vigencia);
 
         if (proyectos != null && !proyectos.isEmpty()) {
             Proyecto proyectoSeleccionado = null;
-            if (proyectoId != null){
+            if (proyectoId != null) {
                 proyectoSeleccionado = proyectos.stream()
-                    .filter(p -> p.getId().equals(proyectoId))
-                    .findFirst()
-                    .orElse(null);
+                        .filter(p -> p.getId().equals(proyectoId))
+                        .findFirst()
+                        .orElse(null);
             }
             if (proyectoSeleccionado == null) {
                 proyectoSeleccionado = proyectos.get(0);
             }
 
-        List<PresupuestoResumenDTO> resumen = presupuestoService.obtenerResumenPresupuestal(proyectoSeleccionado.getId());
-        List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());      
+            List<PresupuestoResumenDTO> resumen = presupuestoService.obtenerResumenPresupuestal(proyectoSeleccionado.getId());
+            ResumenProyectoPresupuestoDTO resumenProyecto = presupuestoService.obtenerResumenGlobalProyecto(resumen);
+            List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
 
             model.addAttribute("proyecto", proyectoSeleccionado);
             model.addAttribute("resumenPresupuestal", resumen);
+            model.addAttribute("resumenProyecto", resumenProyecto);
             model.addAttribute("actividades", actividades);
-            model.addAttribute("tiposMovimiento", TipoMovimiento.values());
             model.addAttribute("fuentes", FuenteFinanciacion.values());
+            model.addAttribute("operacionesActualizacion", OperacionActualizacion.values());
         } else {
             model.addAttribute("proyecto", null);
             model.addAttribute("resumenPresupuestal", new ArrayList<>());
+            model.addAttribute("resumenProyecto", new ResumenProyectoPresupuestoDTO());
             model.addAttribute("actividades", new ArrayList<>());
-            model.addAttribute("tiposMovimiento", TipoMovimiento.values());
             model.addAttribute("fuentes", FuenteFinanciacion.values());
+            model.addAttribute("operacionesActualizacion", OperacionActualizacion.values());
         }
         return "presupuesto";
     }
@@ -393,6 +391,9 @@ public class WebController {
     }
 
     //Costos y Rubros
+    
+    //eliminar este metodo
+/* 
     @PostMapping ("/api/proyecto/actualizar-costos")
     @ResponseBody
     public ResponseEntity<?> actualizarCostosProyecto(@RequestBody SolicitudActualizacionDTO solicitud){
@@ -403,7 +404,7 @@ public class WebController {
         return ResponseEntity.badRequest().body("{\"mensaje\": \"" + e.getMessage() + "\"}");
         }
     }
-
+*/
     @PostMapping ("/actividades/{actividadId}/rubros")
     public String agregarRubroGasto(@PathVariable Long actividadId,
             @RequestParam String concepto,
