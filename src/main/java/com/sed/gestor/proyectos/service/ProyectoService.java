@@ -14,10 +14,12 @@ import com.sed.gestor.proyectos.model.MetaProducto;
 import com.sed.gestor.proyectos.model.Proyecto;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 import com.sed.gestor.proyectos.repository.ProyectoRepository;
+import com.sed.gestor.proyectos.repository.RubroGastoRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
 import com.sed.gestor.proyectos.repository.ActividadRepository;
+import com.sed.gestor.proyectos.repository.DetalleMovimientoRepository;
 import com.sed.gestor.proyectos.repository.MetaProductoRepository;
 
 @Service 
@@ -25,15 +27,21 @@ public class ProyectoService {
     private final ProyectoRepository proyectoRepository;
     private final MetaProductoRepository metaProductoRepository;
     private final ActividadRepository actividadRepository;
+    private final DetalleMovimientoRepository detalleMovimientoRepository;
+    private final RubroGastoRepository rubroGastoRepository;
+
+    //Lecturas generales
 
     @Autowired 
-    public ProyectoService(ProyectoRepository proyectoRepository, MetaProductoRepository metaProductoRepository, ActividadRepository actividadRepository){
+    public ProyectoService(ProyectoRepository proyectoRepository, MetaProductoRepository metaProductoRepository,
+            ActividadRepository actividadRepository, DetalleMovimientoRepository detalleMovimientoRepository,
+            RubroGastoRepository rubroGastoRepository) {
         this.proyectoRepository = proyectoRepository;
         this.metaProductoRepository = metaProductoRepository;
         this.actividadRepository = actividadRepository;
+        this.detalleMovimientoRepository = detalleMovimientoRepository;
+        this.rubroGastoRepository = rubroGastoRepository;
     }
-
-    //Lecturas generales
 
     @Transactional (readOnly = true)
     public List<Proyecto> obtenerTodos(){
@@ -126,12 +134,40 @@ public class ProyectoService {
     }
 
     @Transactional
-    public Actividad editarActividad(Long actividadId, String nombre, BigDecimal presupuestoInicial, FuenteFinanciacion fuente, String descripcion) {
+    public Actividad editarActividad(Long actividadId, String nombre, BigDecimal presupuestoInicial,
+                                     FuenteFinanciacion fuente, String descripcion) {
         Actividad actividad = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada con ID: " + actividadId));
+
+        boolean tieneMovimientos = !detalleMovimientoRepository.findByActividadId(actividadId).isEmpty();
+        boolean tieneRubros = !rubroGastoRepository.findByActividadId(actividadId).isEmpty();
+
+        // Proteger cambio de fuente si ya existen movimientos o rubros asociados
+        if ((tieneMovimientos || tieneRubros) && fuente != null && actividad.getFuente() != fuente) {
+            throw new IllegalStateException(
+                    "No se puede cambiar la fuente de financiación de la actividad porque ya tiene rubros o movimientos presupuestales registrados. Use la Operación #8 en Seguimiento Presupuestal.");
+        }
+
+        // Proteger reducción del presupuesto inicial por debajo de lo ya distribuido en rubros
+        if (presupuestoInicial != null && tieneRubros) {
+            BigDecimal totalRubros = rubroGastoRepository.findByActividadId(actividadId).stream()
+                    .map(r -> r.getMontoAsignado() != null ? r.getMontoAsignado() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (presupuestoInicial.compareTo(totalRubros) < 0) {
+                throw new IllegalStateException(
+                        String.format("El presupuesto inicial ($%,.2f) no puede ser menor al total ya distribuido en rubros ($%,.2f).",
+                                presupuestoInicial, totalRubros));
+            }
+        }
+
         actividad.setNombre(nombre);
-        actividad.setPresupuestoInicial(presupuestoInicial);
-        actividad.setFuente(fuente);
+        if (presupuestoInicial != null) {
+            actividad.setPresupuestoInicial(presupuestoInicial);
+        }
+        if (fuente != null) {
+            actividad.setFuente(fuente);
+        }
         actividad.setDescripcion(descripcion);
         return actividadRepository.save(actividad);
     }

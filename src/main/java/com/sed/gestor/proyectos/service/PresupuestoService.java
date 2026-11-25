@@ -177,6 +177,45 @@ public class PresupuestoService {
         return listaResumen;
     }
 
+    //metricas
+    @Transactional(readOnly = true)
+    public List<MetricasFuenteDTO> obtenerMetricasPorFuenteProyecto(List<PresupuestoResumenDTO> resumenActividades) {
+        List<MetricasFuenteDTO> resultado = new ArrayList<>();
+
+        for (FuenteFinanciacion fuente : FuenteFinanciacion.values()) {
+            BigDecimal init = BigDecimal.ZERO;
+            BigDecimal adic = BigDecimal.ZERO;
+            BigDecimal red = BigDecimal.ZERO;
+            BigDecimal def = BigDecimal.ZERO;
+            BigDecimal ejec = BigDecimal.ZERO;
+            BigDecimal disp = BigDecimal.ZERO;
+
+            if (resumenActividades != null) {
+                for (PresupuestoResumenDTO actResumen : resumenActividades) {
+                    MetricasFuenteDTO mf = actResumen.getMetrica(fuente);
+                    init = init.add(mf.getApropiacionInicial());
+                    adic = adic.add(mf.getAdiciones());
+                    red = red.add(mf.getReducciones());
+                    def = def.add(mf.getApropiacionDefinitiva());
+                    ejec = ejec.add(mf.getEjecutado());
+                    disp = disp.add(mf.getSaldoDisponible());
+                }
+            }
+
+            MetricasFuenteDTO consolidadoFuente = new MetricasFuenteDTO();
+            consolidadoFuente.setFuente(fuente);
+            consolidadoFuente.setApropiacionInicial(init);
+            consolidadoFuente.setAdiciones(adic);
+            consolidadoFuente.setReducciones(red);
+            consolidadoFuente.setApropiacionDefinitiva(def);
+            consolidadoFuente.setEjecutado(ejec);
+            consolidadoFuente.setSaldoDisponible(disp);
+
+            resultado.add(consolidadoFuente);
+        }
+        return resultado;
+    }
+
     @Transactional(readOnly = true)
     public ResumenProyectoPresupuestoDTO obtenerResumenGlobalProyecto(List<PresupuestoResumenDTO> resumenActividades) {
         ResumenProyectoPresupuestoDTO resumenGlobal = new ResumenProyectoPresupuestoDTO();

@@ -33,7 +33,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class WebController {
@@ -84,36 +86,30 @@ public class WebController {
             }
 
             DashboardProyectoDTO dashboard = metaService.obtenerResumenDashboard(proyectoSeleccionado.getId(), vigencia);
-            List<Actividad> actividades = actividadRepository.findByProyectoId(proyectoSeleccionado.getId());
+            List<PresupuestoResumenDTO> resumenPresupuestal = presupuestoService.obtenerResumenPresupuestal(proyectoSeleccionado.getId());
+            ResumenProyectoPresupuestoDTO resumenProyecto = presupuestoService.obtenerResumenGlobalProyecto(resumenPresupuestal);
+            List<MetricasFuenteDTO> metricasFuentes = presupuestoService.obtenerMetricasPorFuenteProyecto(resumenPresupuestal);
 
-            List<MetricasFuenteDTO> metricasFuentes = new ArrayList<>();
             BigDecimal sumaRecursosPropios = BigDecimal.ZERO;
             BigDecimal sumaTotalGeneral = BigDecimal.ZERO;
 
-            for (FuenteFinanciacion fuente : FuenteFinanciacion.values()) {
-                BigDecimal acumuladoFuente = BigDecimal.ZERO;
-
-                for (Actividad act : actividades) {
-                    acumuladoFuente = acumuladoFuente.add(presupuestoService.obtenerSaldoDisponible(act.getId(), fuente));
+            for (MetricasFuenteDTO metrica : metricasFuentes) {
+                if(metrica.isEsRecursoPropio()){
+                    sumaRecursosPropios = sumaRecursosPropios.add(metrica.getSaldoDisponible());
                 }
-
-                MetricasFuenteDTO metrica = new MetricasFuenteDTO(fuente, acumuladoFuente);
-                metricasFuentes.add(metrica);
-
-                if (fuente.isEsRecursoPropio()) {
-                    sumaRecursosPropios = sumaRecursosPropios.add(acumuladoFuente);
-                }
-                sumaTotalGeneral = sumaTotalGeneral.add(acumuladoFuente);
+                sumaTotalGeneral = sumaTotalGeneral.add(metrica.getSaldoDisponible());
             }
 
             model.addAttribute("proyecto", proyectoSeleccionado);
             model.addAttribute("dashboard", dashboard);
+            model.addAttribute("resumenProyecto", resumenProyecto);
             model.addAttribute("metricasFuentes", metricasFuentes);
             model.addAttribute("sumaRecursosPropios", sumaRecursosPropios);
             model.addAttribute("totalGeneral", sumaTotalGeneral);
         } else {
             model.addAttribute("proyecto", null);
             model.addAttribute("dashboard", new DashboardProyectoDTO());
+            model.addAttribute("resumenProyecto", new ResumenProyectoPresupuestoDTO());
             model.addAttribute("metricasFuentes", new ArrayList<MetricasFuenteDTO>());
             model.addAttribute("sumaRecursosPropios", BigDecimal.ZERO);
             model.addAttribute("totalGeneral", BigDecimal.ZERO);
@@ -239,6 +235,9 @@ public class WebController {
             MetaProducto metaProductoAsociada = proyectoSeleccionado.getMetaProducto();
             DashboardProyectoDTO resumen = metaService.obtenerResumenDashboard(proyectoSeleccionado.getId(), vigencia);
             
+            List<PresupuestoResumenDTO> resumenPresupuestal = presupuestoService.obtenerResumenPresupuestal(proyectoSeleccionado.getId());
+            ResumenProyectoPresupuestoDTO resumenProyecto = presupuestoService.obtenerResumenGlobalProyecto(resumenPresupuestal);
+
             //Resumen metas (estrategico)
             MetaEstrategicoResumenDTO resumenEstrategico = metaService.obtenerResumenEstrategico(metaProductoAsociada, vigencia);
 
@@ -247,12 +246,14 @@ public class WebController {
 
             model.addAttribute("proyecto", proyectoSeleccionado);
             model.addAttribute("metaProducto", metaProductoAsociada);
+            model.addAttribute("resumenProyecto", resumenProyecto);
             model.addAttribute("actividadesResumen", actividadesResumen);
             model.addAttribute("resumenEstrategico", resumenEstrategico);
             model.addAttribute("resumenMetas", resumen != null ? resumen.getResumenMetas() : new ArrayList<>());
         } else {
             model.addAttribute("proyecto", null);
             model.addAttribute("metaProducto", null);
+            model.addAttribute("resumenProyecto", new ResumenProyectoPresupuestoDTO());
             model.addAttribute("actividadesResumen", new ArrayList<>());
             model.addAttribute("resumenEstrategico", new ArrayList<>());
             model.addAttribute("resumenMetas", new ArrayList<>());
@@ -371,8 +372,16 @@ public class WebController {
         List<Proyecto> proyectos = proyectoService.obtenerPorVigencia(vigencia);
         List<MetaProducto> metasProducto = metaService.obtenerTodasLasMetasProducto();
 
+        Map<Long, ResumenProyectoPresupuestoDTO> presupuestosPorProyecto = new HashMap<>();
+        if(proyectos != null){
+                for(Proyecto p : proyectos){
+                List<PresupuestoResumenDTO> resAct = presupuestoService.obtenerResumenPresupuestal(p.getId());
+                presupuestosPorProyecto.put(p.getId(), presupuestoService.obtenerResumenGlobalProyecto(resAct));
+            }
+        }
         model.addAttribute("lineasEstrategicas", lineas);
         model.addAttribute("proyectos", proyectos != null ? proyectos : new ArrayList<>());
+        model.addAttribute("presupuestosPorProyecto", presupuestosPorProyecto);
         model.addAttribute("metasProducto", metasProducto);
         model.addAttribute("vigencia", vigencia);
         model.addAttribute("fuentes", FuenteFinanciacion.values());
