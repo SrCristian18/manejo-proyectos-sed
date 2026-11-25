@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.sed.gestor.proyectos.dto.MovimientoRequest;
+import com.sed.gestor.proyectos.dto.RubroEjecucionDTO;
 import com.sed.gestor.proyectos.dto.SaldoResponse;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.DetalleMovimiento;
@@ -54,25 +55,30 @@ public class PresupuestoController {
         this.documentoSoporteRepository = documentoSoporteRepository;
     }
 
-    @GetMapping ("/rubros")
-    public ResponseEntity<List<RubroGasto>> obtenerRubrosPorActividad(@RequestParam Long actividadId){
-        List<RubroGasto> rubros = rubroGastoRepository.findByActividadId(actividadId);
-        return ResponseEntity.ok(rubros);
+@GetMapping("/rubros")
+    public ResponseEntity<List<RubroEjecucionDTO>> obtenerRubrosPorActividad(@RequestParam Long actividadId) {
+        return ResponseEntity.ok(presupuestoService.obtenerDetalleRubrosActividad(actividadId));
     }
 
     @PostMapping("/rubros")
-    public ResponseEntity<RubroGasto> agregarRubro(@RequestBody Map<String, Object> payload) {
-        Long actividadId = Long.valueOf(payload.get("actividadId").toString());
-        String concepto = payload.get("concepto").toString();
-        BigDecimal monto = new BigDecimal(payload.get("monto").toString());
+    public ResponseEntity<?> guardarOEditarRubro(@RequestBody Map<String, Object> payload) {
+        try {
+            Long rubroId = payload.get("id") != null && !payload.get("id").toString().isEmpty()
+                    ? Long.valueOf(payload.get("id").toString()) : null;
+            Long actividadId = Long.valueOf(payload.get("actividadId").toString());
+            String concepto = payload.get("concepto").toString();
+            FuenteFinanciacion fuente = payload.get("fuente") != null
+                    ? FuenteFinanciacion.valueOf(payload.get("fuente").toString())
+                    : FuenteFinanciacion.LIBRE_DESTINACION;
+            BigDecimal monto = new BigDecimal(payload.get("monto").toString());
 
-        Actividad actividad = actividadRepository.findById(actividadId)
-                .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
-
-        RubroGasto nuevoRubro = new RubroGasto(concepto, monto, actividad);
-        RubroGasto guardado = rubroGastoRepository.save(nuevoRubro);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
+            RubroGasto guardado = presupuestoService.guardarOActualizarRubro(rubroId, actividadId, concepto, fuente, monto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("mensaje", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 
     @GetMapping ("/saldo")
@@ -121,55 +127,69 @@ public class PresupuestoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
-   @PostMapping(value = "/movimiento-soporte", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> registrarMovimientoConSoporte(
+    @PostMapping(value = "/movimiento-soporte", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> registrarMovimientoConSoporte(
             @RequestParam("proyectoId") Long proyectoId,
             @RequestParam("tipoMovimiento") TipoMovimiento tipoMovimiento,
             @RequestParam("numeroDecreto") String numeroDecreto,
             @RequestParam("actividadId") Long actividadId,
+            @RequestParam(value = "rubroId", required = false) Long rubroId,
             @RequestParam("fuente") FuenteFinanciacion fuente,
             @RequestParam("monto") BigDecimal monto,
             @RequestParam(value = "archivoSoporte", required = false) MultipartFile archivoSoporte) {
+        try {
+            Proyecto proyecto = proyectoRepository.findById(proyectoId)
+                    .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado"));
 
-        Proyecto proyecto = proyectoRepository.findById(proyectoId)
-                .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado"));
+            MovimientoPresupuestal movimiento = new MovimientoPresupuestal();
+            movimiento.setProyecto(proyecto);
+            movimiento.setTipoMovimiento(tipoMovimiento);
+            movimiento.setNumeroDecreto(numeroDecreto);
+            movimiento.setFechaRegistro(LocalDateTime.now());
 
-        MovimientoPresupuestal movimiento = new MovimientoPresupuestal();
-        movimiento.setProyecto(proyecto);
-        movimiento.setTipoMovimiento(tipoMovimiento);
-        movimiento.setNumeroDecreto(numeroDecreto);
-        movimiento.setFechaRegistro(LocalDateTime.now());
+            Actividad actividad = actividadRepository.findById(actividadId)
+                    .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
 
-        Actividad actividad = actividadRepository.findById(actividadId)
-                .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
+            DetalleMovimiento detalle = new DetalleMovimiento();
+            detalle.setActividad(actividad);
+            detalle.setMonto(monto);
 
-        DetalleMovimiento detalle = new DetalleMovimiento();
-        detalle.setActividad(actividad);
-        detalle.setFuente(fuente);
-        detalle.setMonto(monto);
-        movimiento.addDetalle(detalle);
+            if (rubroId != null) {
+                RubroGasto rubro = rubroGastoRepository.findById(rubroId)
+                        .orElseThrow(() -> new IllegalArgumentException("Rubro de gasto no encontrado"));
+                detalle.setRubro(rubro);
+                detalle.setFuente(rubro.getFuente()); // Garantiza coherencia entre rubro y fuente
+            } else {
+                detalle.setFuente(fuente);
+            }
 
-        MovimientoPresupuestal guardado = presupuestoService.registrarMovimiento(movimiento);
+            movimiento.addDetalle(detalle);
+            MovimientoPresupuestal guardado = presupuestoService.registrarMovimiento(movimiento);
 
-        // Guardar documento anexo si fue proporcionado
-        if (archivoSoporte != null && !archivoSoporte.isEmpty()) {
-            String nombreOriginal = archivoSoporte.getOriginalFilename();
-            String rutaAlmacenamiento = "/uploads/" + System.currentTimeMillis() + "_" + nombreOriginal;
-            
-            DocumentoSoporte doc = new DocumentoSoporte();
-            doc.setNombreArchivo(nombreOriginal);
-            doc.setRutaArchivo(rutaAlmacenamiento);
-            doc.setTipoContenido(archivoSoporte.getContentType());
-            doc.setFechaCarga(LocalDateTime.now());
-            doc.setMovimiento(guardado);
+            if (archivoSoporte != null && !archivoSoporte.isEmpty()) {
+                String nombreOriginal = archivoSoporte.getOriginalFilename();
+                String rutaAlmacenamiento = "/uploads/" + System.currentTimeMillis() + "_" + nombreOriginal;
 
-            documentoSoporteRepository.save(doc);
+                DocumentoSoporte doc = new DocumentoSoporte();
+                doc.setNombreArchivo(nombreOriginal);
+                doc.setRutaArchivo(rutaAlmacenamiento);
+                doc.setTipoContenido(archivoSoporte.getContentType());
+                doc.setFechaCarga(LocalDateTime.now());
+                doc.setMovimiento(guardado);
+
+                documentoSoporteRepository.save(doc);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("mensaje", "Ejecución registrada correctamente.");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("mensaje", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "success");
-        response.put("mensaje", "Movimiento y soporte registrados correctamente");
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     //actividad

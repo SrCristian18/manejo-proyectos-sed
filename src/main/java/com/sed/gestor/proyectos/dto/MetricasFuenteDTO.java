@@ -66,4 +66,11 @@ public class MetricasFuenteDTO {
 
     public BigDecimal getSaldoDisponible() { return saldoDisponible; }
     public void setSaldoDisponible(BigDecimal saldoDisponible) { this.saldoDisponible = saldoDisponible; }
+
+    //Getters auxiliares
+    public BigDecimal getModificadoNeto(){
+        BigDecimal adic = this.adiciones != null ? this.adiciones : BigDecimal.ZERO;
+        BigDecimal red = this.reducciones != null ? this.reducciones : BigDecimal.ZERO;
+        return adic.subtract(red);
+    }
 }

@@ -8,7 +8,9 @@ import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
 import com.sed.gestor.proyectos.dto.ProyectoDTO;
 import com.sed.gestor.proyectos.dto.ResumenProyectoPresupuestoDTO;
+import com.sed.gestor.proyectos.dto.RubroEjecucionDTO;
 import com.sed.gestor.proyectos.model.Actividad;
+import com.sed.gestor.proyectos.model.DetalleMovimiento;
 import com.sed.gestor.proyectos.model.LineaEstrategica;
 import com.sed.gestor.proyectos.model.MetaProducto;
 import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
@@ -160,6 +162,38 @@ public class WebController {
             model.addAttribute("operacionesActualizacion", OperacionActualizacion.values());
         }
         return "presupuesto";
+    }
+
+    //% de ejecucion
+    @GetMapping("/presupuesto/actividad/{actividadId}/ejecucion-rubros")
+    public String verDetalleEjecucionRubros(@PathVariable Long actividadId,
+                                            @RequestParam(required = false) Long proyectoId,
+                                            @RequestParam(defaultValue = "2026") Integer vigencia,
+                                            Model model) {
+        Actividad actividad = actividadRepository.findById(actividadId)
+                .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
+
+        List<RubroEjecucionDTO> rubrosResumen = presupuestoService.obtenerDetalleRubrosActividad(actividadId);
+        List<DetalleMovimiento> ejecuciones = presupuestoService.obtenerHistorialEjecucionesActividad(actividadId);
+
+        BigDecimal totalAsignado = rubrosResumen.stream()
+                .map(RubroEjecucionDTO::getMontoAsignado)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalEjecutado = rubrosResumen.stream()
+                .map(RubroEjecucionDTO::getMontoEjecutado)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalDisponible = totalAsignado.subtract(totalEjecutado);
+
+        model.addAttribute("actividad", actividad);
+        model.addAttribute("proyecto", actividad.getProyecto());
+        model.addAttribute("vigencia", vigencia);
+        model.addAttribute("rubrosResumen", rubrosResumen);
+        model.addAttribute("ejecuciones", ejecuciones);
+        model.addAttribute("totalAsignado", totalAsignado);
+        model.addAttribute("totalEjecutado", totalEjecutado);
+        model.addAttribute("totalDisponible", totalDisponible);
+
+        return "ejecucion_rubros";
     }
 
     @GetMapping ("/presupuesto/trazabilidad")
@@ -408,11 +442,12 @@ public class WebController {
     @PostMapping ("/actividades/{actividadId}/rubros")
     public String agregarRubroGasto(@PathVariable Long actividadId,
             @RequestParam String concepto,
+            @RequestParam FuenteFinanciacion fuente,
             @RequestParam BigDecimal montoAsignado,
             @RequestParam Long proyectoId){
         Actividad actividad = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
-        RubroGasto rubro = new RubroGasto(concepto, montoAsignado, actividad);
+        RubroGasto rubro = new RubroGasto(concepto, fuente, montoAsignado, actividad);
         rubroGastoRepository.save(rubro);
 
         return "redirect:/presupuesto?proyectoId=" + proyectoId;

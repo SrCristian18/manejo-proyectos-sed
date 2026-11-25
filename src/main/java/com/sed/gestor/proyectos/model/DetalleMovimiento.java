@@ -43,6 +43,11 @@ public class DetalleMovimiento {
     @Column (name = "monto", nullable = false, precision = 19, scale = 2)
     private BigDecimal monto;
 
+    @ManyToOne (fetch = FetchType.LAZY)
+    @JoinColumn (name = "rubro_id", nullable = true)
+    @JsonIgnoreProperties ({"actividad"})
+    private RubroGasto rubro;
+
     @Column (name = "numero_cdp")
     private String numeroCdp;
 
@@ -118,6 +123,14 @@ public class DetalleMovimiento {
 
     public void setNumeroRp(String numeroRp) {
         this.numeroRp = numeroRp;
+    }
+
+    public RubroGasto getRubro() {
+        return rubro;
+    }
+
+    public void setRubro(RubroGasto rubro) {
+        this.rubro = rubro;
     }
 
 }

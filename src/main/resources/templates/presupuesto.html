@@ -95,7 +95,7 @@
                     <thead class="table-light text-center align-middle">
                         <tr>
                             <th rowspan="2" class="text-start" style="min-width: 230px;">Actividad (Hito)</th>
-                            <th th:each="f : ${fuentes}" colspan="3" class="fw-bold text-uppercase bg-light-subtle" th:text="${f.etiqueta}">FUENTE</th>
+                            <th th:each="f : ${fuentes}" colspan="4" class="fw-bold text-uppercase bg-light-subtle" th:text="${f.etiqueta}">FUENTE</th>
                             <th rowspan="2" class="text-end bg-light fw-bold">Total Disponible ($)</th>
                             <th rowspan="2" style="width: 135px;">% Ejecución</th>
                             <th rowspan="2" style="width: 175px;">Acciones</th>
@@ -103,6 +103,7 @@
                         <tr>
                             <th:block th:each="f : ${fuentes}">
                                 <th class="text-end small">Inicial</th>
+                                <th class="text-end small text-primary">Modificado</th>
                                 <th class="text-end small text-danger">Gastado</th>
                                 <th class="text-end small text-success">Disponible</th>
                             </th:block>
@@ -116,6 +117,9 @@
                             <th:block th:each="f : ${fuentes}">
                                 <td class="text-end" 
                                     th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).apropiacionInicial, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                                <td class="text-end fw-semibold"
+                                    th:classappend="${item.valoresPorFuente.get(f).modificadoNeto.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? 'text-primary' : (item.valoresPorFuente.get(f).modificadoNeto.compareTo(T(java.math.BigDecimal).ZERO) < 0 ? 'text-danger' : 'text-muted')}"
+                                    th:text="${(item.valoresPorFuente.get(f).modificadoNeto.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '+' : '') + '$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).modificadoNeto, 1, 'POINT', 0, 'COMMA')}">$0</td>
                                 <td class="text-end text-danger" 
                                     th:text="${'$' + #numbers.formatDecimal(item.valoresPorFuente.get(f).ejecutado, 1, 'POINT', 0, 'COMMA')}">$0</td>
                                 <td class="text-end fw-bold text-success" 
@@ -128,7 +132,7 @@
 
                             <!-- Columna % Ejecución (Acción navegable al detalle de rubros) -->
                             <td>
-                                <a th:href="@{/presupuesto/actividad/{id}/ejecucion-rubros(id=${item.actividadId}, proyectoId=${proyecto.id})}" 
+                                <a th:href="@{/presupuesto/actividad/{id}/ejecucion-rubros(id=${item.actividadId}, proyectoId=${proyecto.id}, vigencia=${vigencia})}" 
                                    class="text-decoration-none d-block" 
                                    title="Ver detalle de ejecución por rubros y periodos">
                                     <div class="progress border" style="height: 20px; cursor: pointer;">
@@ -174,7 +178,7 @@
                             </td>
                         </tr>
                         <tr th:if="${resumenPresupuestal == null or resumenPresupuestal.isEmpty()}">
-                            <td th:colspan="${4 + (fuentes.length * 3)}" class="text-center text-muted py-4">
+                            <td th:colspan="${4 + (fuentes.length * 4)}" class="text-center text-muted py-4">
                                 No hay actividades registradas para este proyecto.
                             </td>
                         </tr>
@@ -186,7 +190,7 @@
 
     <!-- MODAL 1: Composición de Rubros por Actividad -->
     <div class="modal fade" id="modalRubros" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title fw-bold text-dark" id="modalRubrosTitulo">Composición de Rubros</h5>
@@ -195,28 +199,51 @@
                 <div class="modal-body">
                     <input type="hidden" id="modalActividadId">
                     <div class="table-responsive mb-3">
-                        <table class="table table-bordered align-middle">
+                        <table class="table table-bordered table-sm align-middle">
                             <thead class="table-light">
                                 <tr>
                                     <th>Concepto de Gasto</th>
-                                    <th class="text-end">Monto Asignado ($)</th>
+                                    <th>Fuente</th>
+                                    <th class="text-end">Asignado ($)</th>
+                                    <th class="text-end">Ejecutado ($)</th>
+                                    <th class="text-end">Disponible ($)</th>
+                                    <th class="text-center" style="width: 80px;">Editar</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaRubrosCuerpo">
-                                <tr><td colspan="2" class="text-center text-muted">Cargando rubros...</td></tr>
+                                <tr><td colspan="6" class="text-center text-muted">Cargando rubros...</td></tr>
                             </tbody>
                         </table>
                     </div>
 
+                    <!-- Formulario para agregar o ajustar un rubro -->
                     <div class="card p-3 border-light bg-light">
-                        <h6 class="fw-bold mb-2"><i class="fa-solid fa-plus me-1 text-success"></i>Agregar Concepto de Gasto</h6>
-                        <div class="mb-2">
-                            <input type="text" id="nuevoConcepto" class="form-control form-control-sm" placeholder="Ej: Contratación, Papelería, Transporte...">
-                        </div>    
-                        <div class="mb-3">
-                            <input type="number" id="nuevoMonto" class="form-control form-control-sm" placeholder="Monto $">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0" id="tituloFormRubro">
+                                <i class="fa-solid fa-plus me-1 text-success"></i>Agregar Concepto de Gasto
+                            </h6>
+                            <button type="button" id="btnCancelarEdicionRubro" class="btn btn-link btn-sm text-secondary d-none" onclick="cancelarEdicionRubro()">
+                                Cancelar edición
+                            </button>
                         </div>
-                        <button type="button" class="btn btn-sm btn-success fw-bold w-100" onclick="guardarRubro()">
+                        <input type="hidden" id="editRubroId">
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <label class="small fw-semibold">Concepto de Gasto</label>
+                                <input type="text" id="nuevoConcepto" class="form-control form-control-sm" placeholder="Ej: Matrículas, Transporte...">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small fw-semibold">Fuente</label>
+                                <select id="nuevaFuenteRubro" class="form-select form-select-sm">
+                                    <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small fw-semibold">Monto Asignado ($)</label>
+                                <input type="number" step="0.01" id="nuevoMonto" class="form-control form-control-sm" placeholder="Monto $">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-success fw-bold w-100 mt-3" onclick="guardarRubro()">
                             <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Concepto
                         </button>
                     </div>
@@ -226,7 +253,7 @@
     </div>
 
     <!-- MODAL 2: Ejecutar Presupuesto (Depurado exclusivamente a CDP / RP) -->
-    <div class="modal fade" id="modalMovimiento" tabindex="-1">
+<div class="modal fade" id="modalMovimiento" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
@@ -248,8 +275,10 @@
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">N° Registro CDP / RP</label>
-                                <input type="text" class="form-control" id="numeroDecreto" placeholder="Ej: CDP-2026-042 / RP-2026-110" required>
+                                <label class="form-label fw-bold">Rubro / Concepto de Gasto a Ejecutar</label>
+                                <select class="form-select" id="rubroMovimientoSelect" onchange="sincronizarFuenteDesdeRubro()">
+                                    <option value="">-- Ejecución general sin rubro específico --</option>
+                                </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Fuente de Financiación</label>
@@ -258,10 +287,14 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label fw-bold">N° Registro CDP / RP</label>
+                                <input type="text" class="form-control" id="numeroDecreto" placeholder="Ej: CDP-2026-042 / RP-2026-110" required>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label fw-bold">Monto a Ejecutar ($)</label>
                                 <input type="number" step="0.01" min="1" class="form-control" id="monto" placeholder="Ej: 50000000" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="form-label fw-bold">Documento Soporte (PDF / Firma)</label>
                                 <input type="file" id="archivoSoporteMovimiento" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
                             </div>
@@ -376,29 +409,60 @@
 
         function cargarRubros(actividadId) {
             const tbody = document.getElementById('tablaRubrosCuerpo');
-            tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Cargando rubros...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Cargando rubros...</td></tr>';
 
             fetch('/api/presupuesto/rubros?actividadId=' + actividadId)
                 .then(res => res.json())
                 .then(data => {
                     tbody.innerHTML = '';
                     if (!data || data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">No hay conceptos registrados.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay conceptos registrados.</td></tr>';
                         return;
                     }
                     data.forEach(r => {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${r.concepto}</td><td class="text-end fw-bold">$${Number(r.montoAsignado).toLocaleString('es-CO')}</td>`;
+                        tr.innerHTML = `
+                            <td class="fw-semibold">${r.concepto}</td>
+                            <td class="small">${r.etiquetaFuente || r.fuente}</td>
+                            <td class="text-end">$${Number(r.montoAsignado).toLocaleString('es-CO')}</td>
+                            <td class="text-end text-danger">$${Number(r.montoEjecutado).toLocaleString('es-CO')}</td>
+                            <td class="text-end fw-bold text-success">$${Number(r.saldoDisponible).toLocaleString('es-CO')}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="prepararEdicionRubro(${r.id}, '${r.concepto.replace(/'/g, "\\'")}', '${r.fuente}', ${r.montoAsignado})"
+                                        title="Ajustar / Editar Rubro">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </td>`;
                         tbody.appendChild(tr);
                     });
                 })
                 .catch(() => {
-                    tbody.innerHTML = '<tr><td colspan="2" class="text-center text-danger">Error al obtener rubros.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al obtener rubros.</td></tr>';
                 });
         }
 
+        function prepararEdicionRubro(id, concepto, fuente, monto) {
+            document.getElementById('editRubroId').value = id;
+            document.getElementById('nuevoConcepto').value = concepto;
+            document.getElementById('nuevaFuenteRubro').value = fuente;
+            document.getElementById('nuevoMonto').value = monto;
+            document.getElementById('tituloFormRubro').innerHTML = '<i class="fa-solid fa-pen me-1 text-primary"></i>Ajustar Concepto de Gasto';
+            document.getElementById('btnCancelarEdicionRubro').classList.remove('d-none');
+        }
+
+        function cancelarEdicionRubro() {
+            document.getElementById('editRubroId').value = '';
+            document.getElementById('nuevoConcepto').value = '';
+            document.getElementById('nuevoMonto').value = '';
+            document.getElementById('tituloFormRubro').innerHTML = '<i class="fa-solid fa-plus me-1 text-success"></i>Agregar Concepto de Gasto';
+            document.getElementById('btnCancelarEdicionRubro').classList.add('d-none');
+        }
+
         function guardarRubro() {
+            const id = document.getElementById('editRubroId').value;
             const concepto = document.getElementById('nuevoConcepto').value;
+            const fuente = document.getElementById('nuevaFuenteRubro').value;
             const monto = document.getElementById('nuevoMonto').value;
 
             if (!concepto || !monto) {
@@ -409,15 +473,17 @@
             fetch('/api/presupuesto/rubros', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ actividadId: actividadActualId, concepto: concepto, monto: monto })
+                body: JSON.stringify({ id: id || null, actividadId: actividadActualId, concepto: concepto, fuente: fuente, monto: monto })
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje || "Error al guardar rubro"); });
+                return res.json();
+            })
             .then(() => {
-                document.getElementById('nuevoConcepto').value = '';
-                document.getElementById('nuevoMonto').value = '';
+                cancelarEdicionRubro();
                 cargarRubros(actividadActualId);
             })
-            .catch(err => alert("Error al guardar rubro: " + err.message));
+            .catch(err => alert("Error: " + err.message));
         }
 
         // 2. Ejecutar CDP / RP
@@ -427,15 +493,46 @@
             document.getElementById('numeroDecreto').value = '';
             document.getElementById('monto').value = '';
 
+            const selectRubro = document.getElementById('rubroMovimientoSelect');
+            selectRubro.innerHTML = '<option value="">Cargando rubros...</option>';
+
+            fetch('/api/presupuesto/rubros?actividadId=' + actividadId)
+                .then(res => res.json())
+                .then(data => {
+                    selectRubro.innerHTML = '<option value="">-- Ejecución general sin rubro específico --</option>';
+                    data.forEach(r => {
+                        const opt = document.createElement('option');
+                        opt.value = r.id;
+                        opt.setAttribute('data-fuente', r.fuente);
+                        opt.textContent = `${r.concepto} (Disp: $${Number(r.saldoDisponible).toLocaleString('es-CO')})`;
+                        selectRubro.appendChild(opt);
+                    });
+                });
+
             const modal = new bootstrap.Modal(document.getElementById('modalMovimiento'));
             modal.show();
         }
 
-        function enviarMovimiento() {
+        function sincronizarFuenteDesdeRubro() {
+            const selectRubro = document.getElementById('rubroMovimientoSelect');
+            const selectedOpt = selectRubro.options[selectRubro.selectedIndex];
+            const fuenteRubro = selectedOpt ? selectedOpt.getAttribute('data-fuente') : null;
+            const selectFuente = document.getElementById('fuente');
+
+            if (fuenteRubro) {
+                selectFuente.value = fuenteRubro;
+                selectFuente.disabled = true;
+            } else {
+                selectFuente.disabled = false;
+            }
+        }
+
+function enviarMovimiento() {
             const proyectoId = document.getElementById('proyectoId').value;
             const tipoMovimiento = document.getElementById('tipoMovimiento').value;
             const numeroDecreto = document.getElementById('numeroDecreto').value;
             const actividadId = document.getElementById('actividadIdModal').value;
+            const rubroId = document.getElementById('rubroMovimientoSelect').value;
             const fuente = document.getElementById('fuente').value;
             const monto = document.getElementById('monto').value;
             const archivoSoporte = document.getElementById('archivoSoporteMovimiento').files[0];
@@ -450,6 +547,9 @@
             formData.append('tipoMovimiento', tipoMovimiento);
             formData.append('numeroDecreto', numeroDecreto);
             formData.append('actividadId', actividadId);
+            if (rubroId) {
+                formData.append('rubroId', rubroId);
+            }
             formData.append('fuente', fuente);
             formData.append('monto', monto);
             if (archivoSoporte) {

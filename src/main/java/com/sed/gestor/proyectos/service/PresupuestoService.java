@@ -12,11 +12,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sed.gestor.proyectos.dto.MetricasFuenteDTO;
 import com.sed.gestor.proyectos.dto.PresupuestoResumenDTO;
 import com.sed.gestor.proyectos.dto.ResumenProyectoPresupuestoDTO;
+import com.sed.gestor.proyectos.dto.RubroEjecucionDTO;
 import com.sed.gestor.proyectos.exception.PresupuestoInsuficienteException;
 import com.sed.gestor.proyectos.model.Actividad;
 import com.sed.gestor.proyectos.model.DetalleMovimiento;
 import com.sed.gestor.proyectos.model.MovimientoPresupuestal;
 import com.sed.gestor.proyectos.model.Proyecto;
+import com.sed.gestor.proyectos.model.RubroGasto;
 import com.sed.gestor.proyectos.model.enums.FuenteFinanciacion;
 import com.sed.gestor.proyectos.model.enums.OperacionActualizacion;
 import com.sed.gestor.proyectos.model.enums.TipoMovimiento;
@@ -24,6 +26,7 @@ import com.sed.gestor.proyectos.repository.ActividadRepository;
 import com.sed.gestor.proyectos.repository.DetalleMovimientoRepository;
 import com.sed.gestor.proyectos.repository.MovimientoPresupuestalRepository;
 import com.sed.gestor.proyectos.repository.ProyectoRepository;
+import com.sed.gestor.proyectos.repository.RubroGastoRepository;
 
 @Service
 public class PresupuestoService {
@@ -31,15 +34,18 @@ public class PresupuestoService {
     private final DetalleMovimientoRepository detalleRepository;
     private final ActividadRepository actividadRepository;
     private final ProyectoRepository proyectoRepository;
+    private final RubroGastoRepository rubroGastoRepository;
 
     public PresupuestoService(MovimientoPresupuestalRepository movimientoRepository,
                               DetalleMovimientoRepository detalleRepository,
                               ActividadRepository actividadRepository,
-                              ProyectoRepository proyectoRepository) {
+                              ProyectoRepository proyectoRepository,
+                              RubroGastoRepository rubroGastoRepository) {
         this.movimientoRepository = movimientoRepository;
         this.detalleRepository = detalleRepository;
         this.actividadRepository = actividadRepository;
         this.proyectoRepository = proyectoRepository;
+        this.rubroGastoRepository = rubroGastoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -85,6 +91,7 @@ public class PresupuestoService {
                 detalle.setMonto(montoAbs);
             }
 
+            //validar saldo
             if (detalle.getMonto().compareTo(BigDecimal.ZERO) < 0) {
                 BigDecimal saldoActual = obtenerSaldoDisponible(detalle.getActividad().getId(), detalle.getFuente());
                 BigDecimal montoDebitar = detalle.getMonto().abs();
@@ -96,6 +103,21 @@ public class PresupuestoService {
                                     detalle.getFuente().getEtiqueta(),
                                     saldoActual,
                                     montoDebitar)
+                    );
+                }
+            }
+            //validar rubro
+            if(detalle.getMonto().compareTo(BigDecimal.ZERO) < 0 && detalle.getRubro() != null){
+                RubroGasto rubro = detalle.getRubro();
+                BigDecimal ejecutadoRubro = detalleRepository
+                    .sumarMontoPorRubroYTipo(rubro.getId(), TipoMovimiento.EJECUCION_CDP_RP).abs();
+                BigDecimal disponibleRubro = rubro.getMontoAsignado().subtract(ejecutadoRubro);
+                BigDecimal montoDebitar = detalle.getMonto().abs();
+
+                if(disponibleRubro.compareTo(montoDebitar) < 0){
+                    throw new PresupuestoInsuficienteException(
+                        String.format("Saldo insuficiente en el rubro '%s'. Disponible en rubro: $%,.2f, Solicitando: $%,.2f",
+                            rubro.getConcepto(), disponibleRubro, montoDebitar)
                     );
                 }
             }
@@ -233,5 +255,96 @@ public class PresupuestoService {
         movimiento.addDetalle(detalle);
 
         return registrarMovimiento(movimiento);
+    }
+
+    //presupuesto
+    @Transactional(readOnly = true)
+    public List<RubroEjecucionDTO> obtenerDetalleRubrosActividad(Long actividadId) {
+        List<RubroGasto> rubros = rubroGastoRepository.findByActividadId(actividadId);
+        List<RubroEjecucionDTO> resultado = new ArrayList<>();
+
+        for (RubroGasto r : rubros) {
+            BigDecimal ejecutado = detalleRepository
+                    .sumarMontoPorRubroYTipo(r.getId(), TipoMovimiento.EJECUCION_CDP_RP).abs();
+            BigDecimal asignado = r.getMontoAsignado() != null ? r.getMontoAsignado() : BigDecimal.ZERO;
+            BigDecimal disponible = asignado.subtract(ejecutado);
+
+            BigDecimal pct = BigDecimal.ZERO;
+            if (asignado.compareTo(BigDecimal.ZERO) > 0) {
+                pct = ejecutado.multiply(new BigDecimal("100"))
+                        .divide(asignado, 2, RoundingMode.HALF_UP);
+            }
+
+            RubroEjecucionDTO dto = new RubroEjecucionDTO();
+            dto.setId(r.getId());
+            dto.setConcepto(r.getConcepto());
+            dto.setFuente(r.getFuente());
+            dto.setMontoAsignado(asignado);
+            dto.setMontoEjecutado(ejecutado);
+            dto.setSaldoDisponible(disponible);
+            dto.setPorcentajeEjecucion(pct);
+            resultado.add(dto);
+        }
+        return resultado;
+    }
+
+    @Transactional
+    public RubroGasto guardarOActualizarRubro(Long rubroId, Long actividadId, String concepto,
+                                              FuenteFinanciacion fuente, BigDecimal montoAsignado) {
+        if (montoAsignado == null || montoAsignado.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("El monto asignado al rubro no puede ser negativo.");
+        }
+
+        Actividad actividad = actividadRepository.findById(actividadId)
+                .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
+
+        // Calcular presupuesto definitivo disponible en esa fuente para la actividad
+        BigDecimal init = obtenerApropiacionInicialActividadYFuente(actividad, fuente);
+        BigDecimal adic = detalleRepository.sumarMontoPorActividadFuenteYTipo(actividadId, fuente, TipoMovimiento.ADICION_CREDITO);
+        BigDecimal red = detalleRepository.sumarMontoPorActividadFuenteYTipo(actividadId, fuente, TipoMovimiento.REDUCCION_CONTRACREDITO).abs();
+        BigDecimal definitivaFuente = init.add(adic).subtract(red);
+
+        // Sumar lo ya asignado en otros rubros de la misma fuente
+        List<RubroGasto> rubrosActividad = rubroGastoRepository.findByActividadId(actividadId);
+        BigDecimal asignadoOtrosRubros = rubrosActividad.stream()
+                .filter(r -> r.getFuente() == fuente && (rubroId == null || !r.getId().equals(rubroId)))
+                .map(RubroGasto::getMontoAsignado)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (asignadoOtrosRubros.add(montoAsignado).compareTo(definitivaFuente) > 0) {
+            BigDecimal cupoRestante = definitivaFuente.subtract(asignadoOtrosRubros);
+            throw new IllegalArgumentException(
+                    String.format("El monto supera el presupuesto definitivo de la fuente %s. Cupo sin distribuir en rubros: $%,.2f",
+                            fuente.getEtiqueta(), cupoRestante.max(BigDecimal.ZERO))
+            );
+        }
+
+        RubroGasto rubro;
+        if (rubroId != null) {
+            rubro = rubroGastoRepository.findById(rubroId)
+                    .orElseThrow(() -> new IllegalArgumentException("Rubro no encontrado"));
+
+            BigDecimal yaEjecutado = detalleRepository
+                    .sumarMontoPorRubroYTipo(rubroId, TipoMovimiento.EJECUCION_CDP_RP).abs();
+            if (montoAsignado.compareTo(yaEjecutado) < 0) {
+                throw new IllegalArgumentException(
+                        String.format("No puede reducir el rubro por debajo de lo ya ejecutado ($%,.2f).", yaEjecutado)
+                );
+            }
+        } else {
+            rubro = new RubroGasto();
+            rubro.setActividad(actividad);
+        }
+
+        rubro.setConcepto(concepto);
+        rubro.setFuente(fuente);
+        rubro.setMontoAsignado(montoAsignado);
+
+        return rubroGastoRepository.save(rubro);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DetalleMovimiento> obtenerHistorialEjecucionesActividad(Long actividadId) {
+        return detalleRepository.findEjecucionesPorActividad(actividadId, TipoMovimiento.EJECUCION_CDP_RP);
     }
 }

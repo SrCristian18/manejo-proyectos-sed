@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layout :: main-layout('Detalle de Ejecución por Rubros', ~{::section})}">
+<body>
+<section>
+    <!-- Encabezado con Botón de Retorno -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-0">
+                <i class="fa-solid fa-chart-pie text-primary me-2"></i>Detalle de Ejecución por Rubros
+            </h3>
+            <p class="text-muted mb-0">
+                Actividad: <strong class="text-dark" th:text="${actividad.nombre}">Actividad</strong>
+            </p>
+        </div>
+        <a th:href="@{/presupuesto(proyectoId=${proyecto.id}, vigencia=${vigencia})}" class="btn btn-outline-secondary fw-semibold">
+            <i class="fa-solid fa-arrow-left me-1"></i> Volver a Seguimiento Presupuestal
+        </a>
+    </div>
+
+    <!-- Tarjeta Resumen de Rubros de la Actividad -->
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="small text-muted text-uppercase fw-bold">Total Distribuido en Rubros</div>
+                <div class="fs-4 fw-bold text-dark" th:text="${'$' + #numbers.formatDecimal(totalAsignado, 1, 'POINT', 0, 'COMMA')}">$0</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 p-3 bg-danger bg-opacity-10">
+                <div class="small text-danger text-uppercase fw-bold">Total Ejecutado en Rubros</div>
+                <div class="fs-4 fw-bold text-danger" th:text="${'$' + #numbers.formatDecimal(totalEjecutado, 1, 'POINT', 0, 'COMMA')}">$0</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 p-3 bg-success bg-opacity-10">
+                <div class="small text-success text-uppercase fw-bold">Saldo Disponible en Rubros</div>
+                <div class="fs-4 fw-bold text-success" th:text="${'$' + #numbers.formatDecimal(totalDisponible, 1, 'POINT', 0, 'COMMA')}">$0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla 1: Estado de Ejecución por cada Rubro -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0"><i class="fa-solid fa-list-ol text-primary me-2"></i>Consolidado por Concepto de Gasto (Rubros)</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Concepto de Gasto (Rubro)</th>
+                            <th>Fuente de Financiación</th>
+                            <th class="text-end">Presupuesto Asignado ($)</th>
+                            <th class="text-end">Valor Ejecutado ($)</th>
+                            <th class="text-end">Saldo Disponible ($)</th>
+                            <th style="width: 170px;">% Ejecución Rubro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${rubrosResumen}">
+                            <td class="fw-bold text-dark" th:text="${r.concepto}">Concepto</td>
+                            <td class="small text-muted" th:text="${r.etiquetaFuente}">Fuente</td>
+                            <td class="text-end" th:text="${'$' + #numbers.formatDecimal(r.montoAsignado, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td class="text-end text-danger fw-semibold" th:text="${'$' + #numbers.formatDecimal(r.montoEjecutado, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td class="text-end text-success fw-bold" th:text="${'$' + #numbers.formatDecimal(r.saldoDisponible, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                            <td>
+                                <div class="progress" style="height: 18px;">
+                                    <div class="progress-bar bg-primary fw-bold" role="progressbar"
+                                         th:style="'width: ' + ${r.porcentajeEjecucion} + '%'"
+                                         th:text="${r.porcentajeEjecucion + '%'}">0%</div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${rubrosResumen == null or rubrosResumen.isEmpty()}">
+                            <td colspan="6" class="text-center text-muted py-4">No hay rubros registrados para esta actividad.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla 2: Detalle Cronológico de Ejecuciones (Periodos, CDP/RP y Valores) -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0"><i class="fa-solid fa-calendar-check text-success me-2"></i>Historial Detallado de Ejecución por Periodo</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha / Periodo</th>
+                            <th>N° Registro (CDP / RP)</th>
+                            <th>Rubro / Concepto Afectado</th>
+                            <th>Fuente</th>
+                            <th class="text-end">Valor Ejecutado ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="det : ${ejecuciones}">
+                            <td th:text="${det.movimiento.fechaRegistro != null ? #temporals.format(det.movimiento.fechaRegistro, 'dd/MM/yyyy HH:mm') : 'Sin fecha'}">01/01/2026</td>
+                            <td class="fw-bold text-primary" th:text="${det.movimiento.numeroDecreto}">CDP-001</td>
+                            <td>
+                                <span th:if="${det.rubro != null}" class="fw-semibold text-dark" th:text="${det.rubro.concepto}">Rubro</span>
+                                <span th:if="${det.rubro == null}" class="badge bg-secondary">Ejecución General Actividad</span>
+                            </td>
+                            <td class="small" th:text="${det.fuente.etiqueta}">Fuente</td>
+                            <td class="text-end fw-bold text-danger" 
+                                th:text="${'$' + #numbers.formatDecimal(det.monto.abs(), 1, 'POINT', 0, 'COMMA')}">$0</td>
+                        </tr>
+                        <tr th:if="${ejecuciones == null or ejecuciones.isEmpty()}">
+                            <td colspan="5" class="text-center text-muted py-4">No hay ejecuciones CDP/RP registradas para esta actividad.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>
