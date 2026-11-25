@@ -199,14 +199,22 @@ public class PresupuestoController {
             @RequestParam("actividadId") Long actividadId,
             @RequestParam("operacion") OperacionActualizacion operacion,
             @RequestParam("numeroDecreto") String numeroDecreto,
-            @RequestParam("fuente") FuenteFinanciacion fuente,
-            @RequestParam("tipoAjuste") String tipoAjuste,
-            @RequestParam("monto") BigDecimal monto,
+            @RequestParam(value = "fuente", required = false) FuenteFinanciacion fuente,
+            @RequestParam(value = "tipoAjuste", required = false) String tipoAjuste,
+            @RequestParam(value = "monto", required = false) BigDecimal monto,
+            @RequestParam(value = "actividadDestinoId", required = false) Long actividadDestinoId,
+            @RequestParam(value = "fuenteDestino", required = false) FuenteFinanciacion fuenteDestino,
             @RequestParam(value = "observaciones", required = false) String observaciones,
             @RequestParam(value = "archivoSoporte", required = false) MultipartFile archivoSoporte) {
         try {
+            if (operacion == OperacionActualizacion.OP_13_CARGUE_DOCUMENTOS
+                    && (archivoSoporte == null || archivoSoporte.isEmpty())) {
+                throw new IllegalArgumentException("Debe adjuntar un archivo PDF para la operación de cargue de documentos.");
+            }
+
             MovimientoPresupuestal guardado = presupuestoService.procesarActualizacionActividad(
-                    proyectoId, actividadId, operacion, numeroDecreto, fuente, tipoAjuste, monto, observaciones);
+                    proyectoId, actividadId, operacion, numeroDecreto, fuente,
+                    tipoAjuste, monto, actividadDestinoId, fuenteDestino, observaciones);
 
             if (archivoSoporte != null && !archivoSoporte.isEmpty()) {
                 String nombreOriginal = archivoSoporte.getOriginalFilename();

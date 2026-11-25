@@ -20,17 +20,20 @@
                         <tr>
                             <th>Fecha</th>
                             <th>Tipo Movimiento</th>
-                            <th>Nº Documento / Decreto</th>
+                            <th>N° Documento / Decreto</th>
                             <th>Actividad Afectada</th>
                             <th>Fuente</th>
                             <th class="text-end">Monto ($)</th>
+                            <th>Observaciones / Soporte</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:each="mov : ${movimientos}">
                             <td th:text="${#temporals.format(mov.fechaRegistro, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
                             <td>
-                                <span class="badge bg-primary" th:text="${mov.tipoMovimiento}">TIPO</span>
+                                <span class="badge"
+                                      th:classappend="${mov.tipoMovimiento.name() == 'EJECUCION_CDP_RP' ? 'bg-danger' : (mov.tipoMovimiento.name() == 'REDISTRIBUCION' ? 'bg-warning text-dark' : 'bg-primary')}"
+                                      th:text="${mov.tipoMovimiento}">TIPO</span>
                             </td>
                             <td class="fw-bold text-primary" th:text="${mov.numeroDecreto}">DEC-001</td>
                             <td>
@@ -40,17 +43,27 @@
                             </td>
                             <td>
                                 <ul class="list-unstyled mb-0" th:each="d : ${mov.detalles}">
-                                    <li th:text="${d.fuente}">FUENTE</li>
+                                    <li class="small" th:text="${d.fuente.etiqueta}">FUENTE</li>
                                 </ul>
                             </td>
-                            <td class="text-end fw-bold text-success">
+                            <td class="text-end fw-bold">
                                 <ul class="list-unstyled mb-0" th:each="d : ${mov.detalles}">
-                                    <li th:text="${'$' + #numbers.formatDecimal(d.monto, 1, 'POINT', 0, 'COMMA')}">$0</li>
+                                    <li th:classappend="${d.monto.compareTo(T(java.math.BigDecimal).ZERO) < 0 ? 'text-danger' : 'text-success'}"
+                                        th:text="${(d.monto.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '+' : '') + '$' + #numbers.formatDecimal(d.monto, 1, 'POINT', 0, 'COMMA')}">$0</li>
                                 </ul>
+                            </td>
+                            <td class="small">
+                                <div th:text="${mov.observaciones != null ? mov.observaciones : '-'}">Obs</div>
+                                <div th:each="doc : ${mov.documentos}" class="mt-1">
+                                    <span class="badge bg-secondary-subtle text-dark border">
+                                        <i class="fa-solid fa-file-pdf text-danger me-1"></i>
+                                        <span th:text="${doc.nombreArchivo}">soporte.pdf</span>
+                                    </span>
+                                </div>
                             </td>
                         </tr>
                         <tr th:if="${movimientos == null or movimientos.isEmpty()}">
-                            <td colspan="6" class="text-center text-muted py-4">No hay historial registrado.</td>
+                            <td colspan="7" class="text-center text-muted py-4">No hay historial registrado.</td>
                         </tr>
                     </tbody>
                 </table>

@@ -70,9 +70,10 @@ public class PresupuestoService {
         BigDecimal init = obtenerApropiacionInicialActividadYFuente(act, fuente);
         BigDecimal adic = detalleRepository.sumarMontoPorActividadFuenteYTipo(actividadId, fuente, TipoMovimiento.ADICION_CREDITO);
         BigDecimal red = detalleRepository.sumarMontoPorActividadFuenteYTipo(actividadId, fuente, TipoMovimiento.REDUCCION_CONTRACREDITO).abs();
+        BigDecimal redist = detalleRepository.sumarMontoPorActividadFuenteYTipo(actividadId, fuente, TipoMovimiento.REDISTRIBUCION);
         BigDecimal ejec = detalleRepository.sumarMontoPorActividadFuenteYTipo(actividadId, fuente, TipoMovimiento.EJECUCION_CDP_RP).abs();
 
-        return init.add(adic).subtract(red).subtract(ejec);
+        return init.add(adic).subtract(red).add(redist).subtract(ejec);
     }
 
     @Transactional
@@ -83,15 +84,14 @@ public class PresupuestoService {
         for (DetalleMovimiento detalle : movimiento.getDetalles()) {
             detalle.setMovimiento(movimiento);
 
-            // Normalizar signo según naturaleza del movimiento
             BigDecimal montoAbs = detalle.getMonto().abs();
             if (tipo == TipoMovimiento.EJECUCION_CDP_RP || tipo == TipoMovimiento.REDUCCION_CONTRACREDITO) {
                 detalle.setMonto(montoAbs.negate());
-            } else {
+            } else if (tipo == TipoMovimiento.ADICION_CREDITO || tipo == TipoMovimiento.APROPIACION_INICIAL) {
                 detalle.setMonto(montoAbs);
             }
+            // Si es REDISTRIBUCION, conserva el signo asignado (-monto en origen, +monto en destino)
 
-            //validar saldo
             if (detalle.getMonto().compareTo(BigDecimal.ZERO) < 0) {
                 BigDecimal saldoActual = obtenerSaldoDisponible(detalle.getActividad().getId(), detalle.getFuente());
                 BigDecimal montoDebitar = detalle.getMonto().abs();
@@ -106,18 +106,18 @@ public class PresupuestoService {
                     );
                 }
             }
-            //validar rubro
-            if(detalle.getMonto().compareTo(BigDecimal.ZERO) < 0 && detalle.getRubro() != null){
+
+            if (detalle.getMonto().compareTo(BigDecimal.ZERO) < 0 && detalle.getRubro() != null) {
                 RubroGasto rubro = detalle.getRubro();
                 BigDecimal ejecutadoRubro = detalleRepository
-                    .sumarMontoPorRubroYTipo(rubro.getId(), TipoMovimiento.EJECUCION_CDP_RP).abs();
+                        .sumarMontoPorRubroYTipo(rubro.getId(), TipoMovimiento.EJECUCION_CDP_RP).abs();
                 BigDecimal disponibleRubro = rubro.getMontoAsignado().subtract(ejecutadoRubro);
                 BigDecimal montoDebitar = detalle.getMonto().abs();
 
-                if(disponibleRubro.compareTo(montoDebitar) < 0){
+                if (disponibleRubro.compareTo(montoDebitar) < 0) {
                     throw new PresupuestoInsuficienteException(
-                        String.format("Saldo insuficiente en el rubro '%s'. Disponible en rubro: $%,.2f, Solicitando: $%,.2f",
-                            rubro.getConcepto(), disponibleRubro, montoDebitar)
+                            String.format("Saldo insuficiente en el rubro '%s'. Disponible en rubro: $%,.2f, Solicitando: $%,.2f",
+                                    rubro.getConcepto(), disponibleRubro, montoDebitar)
                     );
                 }
             }
@@ -143,15 +143,16 @@ public class PresupuestoService {
                 BigDecimal init = obtenerApropiacionInicialActividadYFuente(act, fuente);
                 BigDecimal adic = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.ADICION_CREDITO);
                 BigDecimal red = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.REDUCCION_CONTRACREDITO).abs();
+                BigDecimal redist = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.REDISTRIBUCION);
                 BigDecimal ejec = detalleRepository.sumarMontoPorActividadFuenteYTipo(act.getId(), fuente, TipoMovimiento.EJECUCION_CDP_RP).abs();
 
-                BigDecimal def = init.add(adic).subtract(red);
+                BigDecimal def = init.add(adic).subtract(red).add(redist);
                 BigDecimal disp = def.subtract(ejec);
 
                 MetricasFuenteDTO metrica = dto.getMetrica(fuente);
                 metrica.setFuente(fuente);
                 metrica.setApropiacionInicial(init);
-                metrica.setAdiciones(adic);
+                metrica.setAdiciones(adic.add(redist)); // Refleja la variación neta en modificadoNeto
                 metrica.setReducciones(red);
                 metrica.setApropiacionDefinitiva(def);
                 metrica.setEjecutado(ejec);
@@ -223,38 +224,129 @@ public class PresupuestoService {
                                                                  OperacionActualizacion operacion,
                                                                  String numeroDecreto,
                                                                  FuenteFinanciacion fuente,
-                                                                 String tipoAjuste, // "ADICION" o "REDUCCION"
+                                                                 String tipoAjuste,
                                                                  BigDecimal montoAjuste,
+                                                                 Long actividadDestinoId,
+                                                                 FuenteFinanciacion fuenteDestino,
                                                                  String observaciones) {
-        if (operacion != OperacionActualizacion.OP_07_AJUSTE_COSTOS_INICIALES) {
-            throw new IllegalArgumentException("La operación seleccionada aún no está habilitada para ejecución.");
-        }
-        if (montoAjuste == null || montoAjuste.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("El monto del ajuste debe ser mayor a cero.");
+        if (!operacion.isHabilitada()) {
+            throw new IllegalArgumentException("La operación seleccionada aún no está habilitada.");
         }
 
         Proyecto proyecto = proyectoRepository.findById(proyectoId)
                 .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado"));
-        Actividad actividad = actividadRepository.findById(actividadId)
-                .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
+        Actividad actividadOrigen = actividadRepository.findById(actividadId)
+                .orElseThrow(() -> new IllegalArgumentException("Actividad origen no encontrada"));
 
-        TipoMovimiento tipoMov = "REDUCCION".equalsIgnoreCase(tipoAjuste)
-                ? TipoMovimiento.REDUCCION_CONTRACREDITO
-                : TipoMovimiento.ADICION_CREDITO;
+        String obsConPrefijo = "[" + operacion.getEtiqueta() + "] " + (observaciones != null ? observaciones : "");
 
-        MovimientoPresupuestal movimiento = new MovimientoPresupuestal();
-        movimiento.setProyecto(proyecto);
-        movimiento.setTipoMovimiento(tipoMov);
-        movimiento.setNumeroDecreto(numeroDecreto);
-        movimiento.setObservaciones("[" + operacion.getEtiqueta() + "] " + (observaciones != null ? observaciones : ""));
+        switch (operacion) {
+            case OP_07_AJUSTE_COSTOS_INICIALES: {
+                if (montoAjuste == null || montoAjuste.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("El monto del ajuste debe ser mayor a cero.");
+                }
+                TipoMovimiento tipoMov = "REDUCCION".equalsIgnoreCase(tipoAjuste)
+                        ? TipoMovimiento.REDUCCION_CONTRACREDITO
+                        : TipoMovimiento.ADICION_CREDITO;
 
-        DetalleMovimiento detalle = new DetalleMovimiento();
-        detalle.setActividad(actividad);
-        detalle.setFuente(fuente);
-        detalle.setMonto(montoAjuste);
-        movimiento.addDetalle(detalle);
+                MovimientoPresupuestal movimiento = new MovimientoPresupuestal();
+                movimiento.setProyecto(proyecto);
+                movimiento.setTipoMovimiento(tipoMov);
+                movimiento.setNumeroDecreto(numeroDecreto);
+                movimiento.setObservaciones(obsConPrefijo);
 
-        return registrarMovimiento(movimiento);
+                DetalleMovimiento detalle = new DetalleMovimiento();
+                detalle.setActividad(actividadOrigen);
+                detalle.setFuente(fuente);
+                detalle.setMonto(montoAjuste);
+                movimiento.addDetalle(detalle);
+
+                return registrarMovimiento(movimiento);
+            }
+
+            case OP_03_REDISTRIBUCION_COSTOS: {
+                if (montoAjuste == null || montoAjuste.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("El monto a redistribuir debe ser mayor a cero.");
+                }
+                if (actividadDestinoId == null || actividadDestinoId.equals(actividadId)) {
+                    throw new IllegalArgumentException("Debe seleccionar una actividad destino diferente a la actividad origen.");
+                }
+                Actividad actividadDestino = actividadRepository.findById(actividadDestinoId)
+                        .orElseThrow(() -> new IllegalArgumentException("Actividad destino no encontrada"));
+
+                MovimientoPresupuestal movimiento = new MovimientoPresupuestal();
+                movimiento.setProyecto(proyecto);
+                movimiento.setTipoMovimiento(TipoMovimiento.REDISTRIBUCION);
+                movimiento.setNumeroDecreto(numeroDecreto);
+                movimiento.setObservaciones(obsConPrefijo + " (Traslado hacia: " + actividadDestino.getNombre() + ")");
+
+                // Débito en actividad origen
+                DetalleMovimiento debito = new DetalleMovimiento();
+                debito.setActividad(actividadOrigen);
+                debito.setFuente(fuente);
+                debito.setMonto(montoAjuste.abs().negate());
+                movimiento.addDetalle(debito);
+
+                // Crédito en actividad destino
+                DetalleMovimiento credito = new DetalleMovimiento();
+                credito.setActividad(actividadDestino);
+                credito.setFuente(fuente);
+                credito.setMonto(montoAjuste.abs());
+                movimiento.addDetalle(credito);
+
+                return registrarMovimiento(movimiento);
+            }
+
+            case OP_08_FUENTES_FINANCIACION: {
+                if (montoAjuste == null || montoAjuste.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("El monto a reclasificar entre fuentes debe ser mayor a cero.");
+                }
+                if (fuenteDestino == null || fuenteDestino == fuente) {
+                    throw new IllegalArgumentException("Debe seleccionar una fuente destino diferente a la fuente origen.");
+                }
+
+                MovimientoPresupuestal movimiento = new MovimientoPresupuestal();
+                movimiento.setProyecto(proyecto);
+                movimiento.setTipoMovimiento(TipoMovimiento.REDISTRIBUCION);
+                movimiento.setNumeroDecreto(numeroDecreto);
+                movimiento.setObservaciones(obsConPrefijo + " (" + fuente.getEtiqueta() + " -> " + fuenteDestino.getEtiqueta() + ")");
+
+                // Débito en fuente origen
+                DetalleMovimiento debito = new DetalleMovimiento();
+                debito.setActividad(actividadOrigen);
+                debito.setFuente(fuente);
+                debito.setMonto(montoAjuste.abs().negate());
+                movimiento.addDetalle(debito);
+
+                // Crédito en fuente destino
+                DetalleMovimiento credito = new DetalleMovimiento();
+                credito.setActividad(actividadOrigen);
+                credito.setFuente(fuenteDestino);
+                credito.setMonto(montoAjuste.abs());
+                movimiento.addDetalle(credito);
+
+                return registrarMovimiento(movimiento);
+            }
+
+            case OP_13_CARGUE_DOCUMENTOS: {
+                MovimientoPresupuestal movimiento = new MovimientoPresupuestal();
+                movimiento.setProyecto(proyecto);
+                movimiento.setTipoMovimiento(TipoMovimiento.REDISTRIBUCION);
+                movimiento.setNumeroDecreto(numeroDecreto);
+                movimiento.setObservaciones(obsConPrefijo);
+
+                DetalleMovimiento registroDoc = new DetalleMovimiento();
+                registroDoc.setActividad(actividadOrigen);
+                registroDoc.setFuente(fuente != null ? fuente : FuenteFinanciacion.LIBRE_DESTINACION);
+                registroDoc.setMonto(BigDecimal.ZERO);
+                movimiento.addDetalle(registroDoc);
+
+                return registrarMovimiento(movimiento);
+            }
+
+            default:
+                throw new IllegalArgumentException("Operación no soportada.");
+        }
     }
 
     //presupuesto
