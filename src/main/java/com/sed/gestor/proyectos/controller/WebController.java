@@ -443,50 +443,58 @@ public class WebController {
         return "redirect:/proyectos?vigencia=" + vigencia;
     }
 
-    @PostMapping ("/proyectos/{id}/actividad")
+    @PostMapping("/proyectos/{id}/actividad")
     public String agregarActividad(@PathVariable Long id,
-        @RequestParam String nombre,
-        @RequestParam (required = false) BigDecimal presupuestoInicial,
-        @RequestParam (required = false) FuenteFinanciacion fuente,
-        @RequestParam (required = false) String descripcion){
-
-        Actividad act = proyectoService.agregarActividad(id, nombre, presupuestoInicial, fuente, descripcion);
-        return "redirect:/proyectos?vigencia=" + act.getProyecto().getVigencia();
+                                   @RequestParam String nombre,
+                                   @RequestParam(required = false) BigDecimal presupuestoInicial,
+                                   @RequestParam(required = false) FuenteFinanciacion fuente,
+                                   @RequestParam(required = false) String descripcion,
+                                   @RequestParam(required = false) BigDecimal metaCuatrienio,
+                                   @RequestParam(required = false) String unidadMedida,
+                                   @RequestParam(defaultValue = "2026") Integer vigencia,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            proyectoService.agregarActividad(id, nombre, presupuestoInicial, fuente, descripcion, metaCuatrienio, unidadMedida);
+            redirectAttributes.addFlashAttribute("mensajeExito", "Actividad agregada correctamente.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensajeError", e.getMessage());
+        }
+        return "redirect:/proyectos?vigencia=" + vigencia;
     }
     
     //Actividades
     @PostMapping("/actividades/editar")
     public String editarActividad(@RequestParam Long actividadId,
-        @RequestParam String nombre,
-        @RequestParam (required = false) BigDecimal presupuestoInicial,
-        @RequestParam (required = false) FuenteFinanciacion fuente,
-        @RequestParam (required = false) String descripcion){
-
-        Actividad act = proyectoService.editarActividad(actividadId, nombre, presupuestoInicial, fuente, descripcion);
-        return "redirect:/proyectos?vigencia=" +act.getProyecto().getVigencia();
+                                  @RequestParam String nombre,
+                                  @RequestParam(required = false) BigDecimal presupuestoInicial,
+                                  @RequestParam(required = false) FuenteFinanciacion fuente,
+                                  @RequestParam(required = false) String descripcion,
+                                  @RequestParam(required = false) BigDecimal metaCuatrienio,
+                                  @RequestParam(required = false) String unidadMedida,
+                                  @RequestParam(defaultValue = "2026") Integer vigencia,
+                                  RedirectAttributes redirectAttributes) {
+        try {
+            proyectoService.editarActividad(actividadId, nombre, presupuestoInicial, fuente, descripcion, metaCuatrienio, unidadMedida);
+            redirectAttributes.addFlashAttribute("mensajeExito", "Actividad actualizada correctamente.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensajeError", e.getMessage());
+        }
+        return "redirect:/proyectos?vigencia=" + vigencia;
     }
 
     @PostMapping("/actividades/eliminar/{id}")
-    public String eliminarActividad(@PathVariable Long id) {
-        proyectoService.eliminarActividad(id);
-        return "redirect:/proyectos";
+    public String eliminarActividad(@PathVariable Long id,
+                                    @RequestParam(defaultValue = "2026") Integer vigencia,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            proyectoService.eliminarActividad(id);
+            redirectAttributes.addFlashAttribute("mensajeExito", "Actividad eliminada correctamente.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensajeError", e.getMessage());
+        }
+        return "redirect:/proyectos?vigencia=" + vigencia;
     }
 
-    //Costos y Rubros
-    
-    //eliminar este metodo
-/* 
-    @PostMapping ("/api/proyecto/actualizar-costos")
-    @ResponseBody
-    public ResponseEntity<?> actualizarCostosProyecto(@RequestBody SolicitudActualizacionDTO solicitud){
-    try {
-        presupuestoService.procesarActualizacionProyecto(solicitud);
-        return ResponseEntity.ok().body("{\"mensaje\": \"Actualización de costos procesada exitosamente\"}");
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().body("{\"mensaje\": \"" + e.getMessage() + "\"}");
-        }
-    }
-*/
     @PostMapping ("/actividades/{actividadId}/rubros")
     public String agregarRubroGasto(@PathVariable Long actividadId,
             @RequestParam String concepto,

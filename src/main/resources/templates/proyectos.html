@@ -113,67 +113,159 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <tr th:each="p : ${metaProd.proyectos}" th:if="${p.estaActivoEnVigencia(vigencia)}">
-                                                            <td><span class="badge bg-primary font-monospace" th:text="${p.codigoBpin}">BPIN</span></td>
-                                                            <td class="fw-semibold small" th:text="${p.nombre}">Nombre Proyecto</td>
-                                                            <td><span class="badge bg-secondary" th:text="${p.etiquetaHorizonte}">2024 - 2027</span></td>
-                                                            <td class="text-end fw-bold small text-dark"
-                                                                th:text="${presupuestosPorProyecto.containsKey(p.id) ? ('$' + #numbers.formatDecimal(presupuestosPorProyecto.get(p.id).valorTotalDefinitivo, 1, 'POINT', 0, 'COMMA')) : '$0'}">$0</td>
-                                                            <td class="text-center">
-                                                                <span class="badge bg-info text-dark" th:text="${(p.actividades != null ? p.actividades.size() : 0) + ' Act.'}">0</span>
-                                                            </td>
-                                                            <td class="text-end">
-                                                                <div class="btn-group btn-group-sm" role="group">
-                                                                    <!-- 1. Ficha Resumen e Integración Presupuesto / Metas -->
-                                                                    <button type="button" class="btn btn-outline-info"
-                                                                            th:data-bpin="${p.codigoBpin}"
-                                                                            th:data-nombre="${p.nombre}"
-                                                                            th:data-horizonte="${p.etiquetaHorizonte}"
-                                                                            th:data-mp="${metaProd.codigo + ' - ' + metaProd.descripcion}"
-                                                                            th:data-mr="${metaRes.codigo + ' - ' + metaRes.descripcion}"
-                                                                            th:data-id="${p.id}"
-                                                                            onclick="abrirModalDetalleProyecto(this)"
-                                                                            title="Ver Ficha y Accesos a Presupuesto / Metas">
-                                                                        <i class="fa-solid fa-eye"></i>
-                                                                    </button>
 
-                                                                    <!-- 2. Agregar Actividad -->
-                                                                    <button type="button" class="btn btn-outline-success" 
-                                                                            th:onclick="'abrirModalAgregarActividad(' + ${p.id} + ')'"
-                                                                            title="Agregar Actividad">
-                                                                        <i class="fa-solid fa-plus"></i> Act.
+                                                        <th:block th:each="p : ${metaProd.proyectos}" th:if="${p.estaActivoEnVigencia(vigencia)}">
+                                                            <tr>
+                                                                <td><span class="badge bg-primary font-monospace" th:text="${p.codigoBpin}">BPIN</span></td>
+                                                                <td class="fw-semibold small" th:text="${p.nombre}">Nombre Proyecto</td>
+                                                                <td><span class="badge bg-secondary" th:text="${p.etiquetaHorizonte}">2024 - 2027</span></td>
+                                                                <td class="text-end fw-bold small text-dark"
+                                                                    th:text="${presupuestosPorProyecto.containsKey(p.id) ? ('$' + #numbers.formatDecimal(presupuestosPorProyecto.get(p.id).valorTotalDefinitivo, 1, 'POINT', 0, 'COMMA')) : '$0'}">$0</td>
+                                                                <td class="text-center">
+                                                                    <button type="button" class="btn btn-sm btn-info text-dark fw-bold py-0"
+                                                                            data-bs-toggle="collapse"
+                                                                            th:data-bs-target="'#collapseActs' + ${p.id}"
+                                                                            title="Desplegar / Ocultar Actividades">
+                                                                        <span th:text="${(p.actividades != null ? p.actividades.size() : 0) + ' Act.'}">0</span> ▾
                                                                     </button>
-
-                                                                    <!-- 3. Editar Proyecto -->
-                                                                    <button type="button" class="btn btn-outline-primary"
-                                                                            th:data-id="${p.id}"
-                                                                            th:data-bpin="${p.codigoBpin}"
-                                                                            th:data-nombre="${p.nombre}"
-                                                                            th:data-vigencia="${p.vigencia}"
-                                                                            th:data-vigencia-fin="${p.vigenciaFin}"
-                                                                            th:data-mp-id="${metaProd.id}"
-                                                                            th:data-mr-desc="${metaRes.descripcion}"
-                                                                            onclick="abrirModalEditarProyecto(this)"
-                                                                            title="Editar Proyecto">
-                                                                        <i class="fa-solid fa-pen"></i>
-                                                                    </button>
-
-                                                                    <!-- 4. Eliminar Proyecto -->
-                                                                    <form th:action="@{/proyectos/eliminar/{id}(id=${p.id})}" method="post" class="d-inline"
-                                                                          onsubmit="return confirm('¿Está seguro de eliminar este proyecto? Solo se permitirá si no tiene movimientos presupuestales ni avances físicos.');">
-                                                                        <input type="hidden" name="vigencia" th:value="${vigencia}">
-                                                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar Proyecto">
-                                                                            <i class="fa-solid fa-trash"></i>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <div class="btn-group btn-group-sm" role="group">
+                                                                        <!-- 1. Ficha Resumen e Integración -->
+                                                                        <button type="button" class="btn btn-outline-info"
+                                                                                th:data-bpin="${p.codigoBpin}"
+                                                                                th:data-nombre="${p.nombre}"
+                                                                                th:data-horizonte="${p.etiquetaHorizonte}"
+                                                                                th:data-mp="${metaProd.codigo + ' - ' + metaProd.descripcion}"
+                                                                                th:data-mr="${metaRes.codigo + ' - ' + metaRes.descripcion}"
+                                                                                th:data-id="${p.id}"
+                                                                                onclick="abrirModalDetalleProyecto(this)"
+                                                                                title="Ver Ficha y Accesos a Presupuesto / Metas">
+                                                                            <i class="fa-solid fa-eye"></i>
                                                                         </button>
-                                                                    </form>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
+
+                                                                        <!-- 2. Agregar Actividad -->
+                                                                        <button type="button" class="btn btn-outline-success" 
+                                                                                th:onclick="'abrirModalAgregarActividad(' + ${p.id} + ')'"
+                                                                                title="Agregar Actividad">
+                                                                            <i class="fa-solid fa-plus"></i> Act.
+                                                                        </button>
+
+                                                                        <!-- 3. Editar Proyecto -->
+                                                                        <button type="button" class="btn btn-outline-primary"
+                                                                                th:data-id="${p.id}"
+                                                                                th:data-bpin="${p.codigoBpin}"
+                                                                                th:data-nombre="${p.nombre}"
+                                                                                th:data-vigencia="${p.vigencia}"
+                                                                                th:data-vigencia-fin="${p.vigenciaFin}"
+                                                                                th:data-mp-id="${metaProd.id}"
+                                                                                th:data-mr-desc="${metaRes.descripcion}"
+                                                                                onclick="abrirModalEditarProyecto(this)"
+                                                                                title="Editar Proyecto">
+                                                                            <i class="fa-solid fa-pen"></i>
+                                                                        </button>
+
+                                                                        <!-- 4. Eliminar Proyecto -->
+                                                                        <form th:action="@{/proyectos/eliminar/{id}(id=${p.id})}" method="post" class="d-inline"
+                                                                              onsubmit="return confirm('¿Está seguro de eliminar este proyecto? Solo se permitirá si no tiene movimientos presupuestales ni avances físicos.');">
+                                                                            <input type="hidden" name="vigencia" th:value="${vigencia}">
+                                                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar Proyecto">
+                                                                                <i class="fa-solid fa-trash"></i>
+                                                                            </button>
+                                                                        </form>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+
+                                                            <!-- Sub-fila desplegable de Actividades y Rubros del Proyecto -->
+                                                            <tr th:id="'collapseActs' + ${p.id}" class="collapse bg-light-subtle">
+                                                                <td colspan="6" class="p-3">
+                                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                        <span class="fw-bold small text-success">
+                                                                            <i class="fa-solid fa-list-check me-1"></i>Actividades del Proyecto (<span th:text="${p.codigoBpin}"></span>)
+                                                                        </span>
+                                                                        <button type="button" class="btn btn-sm btn-success py-0 fw-semibold"
+                                                                                th:onclick="'abrirModalAgregarActividad(' + ${p.id} + ')'">
+                                                                            <i class="fa-solid fa-plus me-1"></i>Nueva Actividad
+                                                                        </button>
+                                                                    </div>
+
+                                                                    <table class="table table-sm table-bordered bg-white align-middle mb-0" style="font-size: 0.82rem;">
+                                                                        <thead class="table-secondary">
+                                                                            <tr>
+                                                                                <th>Actividad</th>
+                                                                                <th>Fuente Inicial</th>
+                                                                                <th class="text-end">Presup. Inicial ($)</th>
+                                                                                <th class="text-center">Meta Cuatrienio</th>
+                                                                                <th class="text-center">Rubros</th>
+                                                                                <th class="text-end" style="width: 170px;">Acciones Actividad</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            <tr th:each="act : ${p.actividades}">
+                                                                                <td class="fw-semibold text-dark" th:text="${act.nombre}">Nombre Actividad</td>
+                                                                                <td class="small" th:text="${act.fuente != null ? act.fuente.etiqueta : 'Sin fuente'}">Fuente</td>
+                                                                                <td class="text-end fw-bold"
+                                                                                    th:text="${'$' + #numbers.formatDecimal(act.presupuestoInicial != null ? act.presupuestoInicial : 0, 1, 'POINT', 0, 'COMMA')}">$0</td>
+                                                                                <td class="text-center">
+                                                                                    <span th:text="${(act.metaCuatrienio != null ? act.metaCuatrienio : 0) + ' ' + (act.unidadMedida != null ? act.unidadMedida : 'Unidades')}">0</span>
+                                                                                </td>
+                                                                                <td class="text-center">
+                                                                                    <span class="badge bg-secondary" th:text="${(act.rubros != null ? act.rubros.size() : 0) + ' Rubros'}">0 Rubros</span>
+                                                                                </td>
+                                                                                <td class="text-end">
+                                                                                    <div class="btn-group btn-group-sm" role="group">
+                                                                                        <!-- Asignar / Ver Rubros de la Actividad -->
+                                                                                        <button type="button" class="btn btn-outline-secondary"
+                                                                                                th:data-id="${act.id}"
+                                                                                                th:data-nombre="${act.nombre}"
+                                                                                                th:data-fuente="${act.fuente != null ? act.fuente.name() : 'LIBRE_DESTINACION'}"
+                                                                                                onclick="abrirModalRubrosDesdeProyectos(this)"
+                                                                                                title="Asignar / Editar Rubros de Gasto">
+                                                                                            <i class="fa-solid fa-list"></i>
+                                                                                        </button>
+
+                                                                                        <!-- Editar Actividad -->
+                                                                                        <button type="button" class="btn btn-outline-primary"
+                                                                                                th:data-id="${act.id}"
+                                                                                                th:data-nombre="${act.nombre}"
+                                                                                                th:data-presupuesto="${act.presupuestoInicial}"
+                                                                                                th:data-fuente="${act.fuente != null ? act.fuente.name() : 'LIBRE_DESTINACION'}"
+                                                                                                th:data-descripcion="${act.descripcion}"
+                                                                                                th:data-meta="${act.metaCuatrienio}"
+                                                                                                th:data-unidad="${act.unidadMedida}"
+                                                                                                onclick="abrirModalEditarActividad(this)"
+                                                                                                title="Editar Actividad">
+                                                                                            <i class="fa-solid fa-pen"></i>
+                                                                                        </button>
+
+                                                                                        <!-- Eliminar Actividad -->
+                                                                                        <form th:action="@{/actividades/eliminar/{id}(id=${act.id})}" method="post" class="d-inline"
+                                                                                              onsubmit="return confirm('¿Eliminar esta actividad? Solo se permitirá si no tiene movimientos presupuestales ni avances físicos.');">
+                                                                                            <input type="hidden" name="vigencia" th:value="${vigencia}">
+                                                                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar Actividad">
+                                                                                                <i class="fa-solid fa-trash"></i>
+                                                                                            </button>
+                                                                                        </form>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                            <tr th:if="${p.actividades == null or p.actividades.isEmpty()}">
+                                                                                <td colspan="6" class="text-center text-muted py-2">
+                                                                                    Este proyecto aún no tiene actividades registradas.
+                                                                                </td>
+                                                                            </tr>
+                                                                        </tbody>
+                                                                    </table>
+                                                                </td>
+                                                            </tr>
+                                                        </th:block>
                                                         <tr th:if="${metaProd.proyectos == null or metaProd.proyectos.isEmpty()}">
                                                             <td colspan="6" class="text-center text-muted small py-2">
                                                                 No hay proyectos vinculados a esta Meta Producto.
                                                             </td>
                                                         </tr>
+
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -296,42 +388,119 @@
         </div>
     </div>
 
-    <!-- MODAL 3: AGREGAR ACTIVIDADES AL PROYECTO -->
+    <!-- MODAL 3: CREAR / EDITAR ACTIVIDAD DEL PROYECTO -->
     <div class="modal fade" id="modalActividad" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-tasks me-2"></i>Agregar Actividad al Proyecto</h5>
+                    <h5 class="modal-title fw-bold" id="modalActividadTitulo">
+                        <i class="fa-solid fa-tasks me-2"></i>Agregar Actividad al Proyecto
+                    </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="formActividad" method="post">
                     <div class="modal-body">
+                        <input type="hidden" id="editActividadId" name="actividadId">
+                        <input type="hidden" name="vigencia" th:value="${vigencia}">
+
                         <div class="mb-3">
                             <label class="form-label fw-bold">Nombre de la Actividad</label>
-                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Adquisición de licencias y software" required>
+                            <input type="text" id="actNombre" name="nombre" class="form-control" placeholder="Ej: Entrega de becas de educación superior" required>
                         </div>
-                        <div class="row g-2 mb-3">
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Presupuesto Inicial ($)</label>
-                                <input type="number" step="0.01" name="presupuestoInicial" class="form-control" value="0" required>
+                                <input type="number" step="0.01" min="0" id="actPresupuesto" name="presupuestoInicial" class="form-control" value="0" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Fuente de Financiación</label>
-                                <select name="fuente" class="form-select" required>
+                                <select id="actFuente" name="fuente" class="form-select" required>
                                     <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}"></option>
                                 </select>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Meta Física Cuatrienio</label>
+                                <input type="number" step="0.01" min="0" id="actMetaCuatrienio" name="metaCuatrienio" class="form-control" value="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Unidad de Medida</label>
+                                <input type="text" id="actUnidadMedida" name="unidadMedida" class="form-control" placeholder="Ej: Becas, Estudiantes, Informes">
+                            </div>
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-2">
                             <label class="form-label fw-bold">Descripción</label>
-                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Detalles u observaciones de la actividad..."></textarea>
+                            <textarea id="actDescripcion" name="descripcion" class="form-control" rows="2" placeholder="Detalles u observaciones de la actividad..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success fw-bold">Guardar Actividad</button>
+                        <button type="submit" class="btn btn-success fw-bold">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Actividad
+                        </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: ASIGNACIÓN DIRECTA DE RUBROS POR ACTIVIDAD -->
+    <div class="modal fade" id="modalRubrosProyecto" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-dark" id="modalRubrosProyTitulo">Composición de Rubros</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive mb-3">
+                        <table class="table table-bordered table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Concepto de Gasto</th>
+                                    <th>Fuente</th>
+                                    <th class="text-end">Asignado ($)</th>
+                                    <th class="text-end">Ejecutado ($)</th>
+                                    <th class="text-end">Disponible ($)</th>
+                                    <th class="text-center" style="width: 70px;">Editar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaRubrosProyCuerpo">
+                                <tr><td colspan="6" class="text-center text-muted">Cargando rubros...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card p-3 border-light bg-light">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0" id="tituloFormRubroProy">
+                                <i class="fa-solid fa-plus me-1 text-success"></i>Asignar Nuevo Rubro de Gasto
+                            </h6>
+                            <button type="button" id="btnCancelarEdicionRubroProy" class="btn btn-link btn-sm text-secondary d-none" onclick="cancelarEdicionRubroProy()">
+                                Cancelar edición
+                            </button>
+                        </div>
+                        <input type="hidden" id="editRubroProyId">
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <label class="small fw-semibold">Concepto de Gasto</label>
+                                <input type="text" id="proyRubroConcepto" class="form-control form-control-sm" placeholder="Ej: Matrículas, Transporte...">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small fw-semibold">Fuente</label>
+                                <select id="proyRubroFuente" class="form-select form-select-sm">
+                                    <option th:each="f : ${fuentes}" th:value="${f}" th:text="${f.etiqueta}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small fw-semibold">Monto Asignado ($)</label>
+                                <input type="number" step="0.01" id="proyRubroMonto" class="form-control form-control-sm" placeholder="Monto $">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-success fw-bold w-100 mt-3" onclick="guardarRubroDesdeProyectos()">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Rubro
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -405,10 +574,134 @@
             new bootstrap.Modal(document.getElementById('modalDetalleProyecto')).show();
         }
 
+        //Actividades
+        let actividadRubrosProyId = null;
+
         function abrirModalAgregarActividad(proyectoId) {
+            document.getElementById('modalActividadTitulo').innerHTML = '<i class="fa-solid fa-tasks me-2"></i>Agregar Actividad al Proyecto';
             document.getElementById('formActividad').action = '/proyectos/' + proyectoId + '/actividad';
+            document.getElementById('editActividadId').value = '';
+            document.getElementById('actNombre').value = '';
+            document.getElementById('actPresupuesto').value = '0';
+            document.getElementById('actMetaCuatrienio').value = '0';
+            document.getElementById('actUnidadMedida').value = '';
+            document.getElementById('actDescripcion').value = '';
             new bootstrap.Modal(document.getElementById('modalActividad')).show();
         }
+
+        function abrirModalEditarActividad(btn) {
+            document.getElementById('modalActividadTitulo').innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i>Editar Actividad';
+            document.getElementById('formActividad').action = '/actividades/editar';
+            document.getElementById('editActividadId').value = btn.getAttribute('data-id');
+            document.getElementById('actNombre').value = btn.getAttribute('data-nombre');
+            document.getElementById('actPresupuesto').value = btn.getAttribute('data-presupuesto') || '0';
+            document.getElementById('actFuente').value = btn.getAttribute('data-fuente') || 'LIBRE_DESTINACION';
+            document.getElementById('actMetaCuatrienio').value = btn.getAttribute('data-meta') || '0';
+            document.getElementById('actUnidadMedida').value = btn.getAttribute('data-unidad') || '';
+            document.getElementById('actDescripcion').value = btn.getAttribute('data-descripcion') || '';
+            new bootstrap.Modal(document.getElementById('modalActividad')).show();
+        }
+
+        function abrirModalRubrosDesdeProyectos(btn) {
+            actividadRubrosProyId = btn.getAttribute('data-id');
+            const nombreAct = btn.getAttribute('data-nombre');
+            const fuenteDefault = btn.getAttribute('data-fuente');
+
+            document.getElementById('modalRubrosProyTitulo').textContent = 'Rubros de Gasto - ' + nombreAct;
+            cancelarEdicionRubroProy();
+            if (fuenteDefault) {
+                document.getElementById('proyRubroFuente').value = fuenteDefault;
+            }
+
+            new bootstrap.Modal(document.getElementById('modalRubrosProyecto')).show();
+            cargarRubrosProyectos(actividadRubrosProyId);
+        }
+
+        function cargarRubrosProyectos(actividadId) {
+            const tbody = document.getElementById('tablaRubrosProyCuerpo');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Cargando rubros...</td></tr>';
+
+            fetch('/api/presupuesto/rubros?actividadId=' + actividadId)
+                .then(res => res.json())
+                .then(data => {
+                    tbody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay rubros asignados a esta actividad.</td></tr>';
+                        return;
+                    }
+                    data.forEach(r => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="fw-semibold">${r.concepto}</td>
+                            <td class="small">${r.etiquetaFuente || r.fuente}</td>
+                            <td class="text-end">$${Number(r.montoAsignado).toLocaleString('es-CO')}</td>
+                            <td class="text-end text-danger">$${Number(r.montoEjecutado).toLocaleString('es-CO')}</td>
+                            <td class="text-end fw-bold text-success">$${Number(r.saldoDisponible).toLocaleString('es-CO')}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                        onclick="prepararEdicionRubroProy(${r.id}, '${r.concepto.replace(/'/g, "\\'")}', '${r.fuente}', ${r.montoAsignado})"
+                                        title="Editar Rubro">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </td>`;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar rubros.</td></tr>';
+                });
+        }
+
+        function prepararEdicionRubroProy(id, concepto, fuente, monto) {
+            document.getElementById('editRubroProyId').value = id;
+            document.getElementById('proyRubroConcepto').value = concepto;
+            document.getElementById('proyRubroFuente').value = fuente;
+            document.getElementById('proyRubroMonto').value = monto;
+            document.getElementById('tituloFormRubroProy').innerHTML = '<i class="fa-solid fa-pen me-1 text-primary"></i>Editar Rubro de Gasto';
+            document.getElementById('btnCancelarEdicionRubroProy').classList.remove('d-none');
+        }
+
+        function cancelarEdicionRubroProy() {
+            document.getElementById('editRubroProyId').value = '';
+            document.getElementById('proyRubroConcepto').value = '';
+            document.getElementById('proyRubroMonto').value = '';
+            document.getElementById('tituloFormRubroProy').innerHTML = '<i class="fa-solid fa-plus me-1 text-success"></i>Asignar Nuevo Rubro de Gasto';
+            document.getElementById('btnCancelarEdicionRubroProy').classList.add('d-none');
+        }
+
+        function guardarRubroDesdeProyectos() {
+            const id = document.getElementById('editRubroProyId').value;
+            const concepto = document.getElementById('proyRubroConcepto').value;
+            const fuente = document.getElementById('proyRubroFuente').value;
+            const monto = document.getElementById('proyRubroMonto').value;
+
+            if (!concepto || !monto) {
+                alert("Por favor ingrese el concepto y el monto asignado.");
+                return;
+            }
+
+            fetch('/api/presupuesto/rubros', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: id || null,
+                    actividadId: actividadRubrosProyId,
+                    concepto: concepto,
+                    fuente: fuente,
+                    monto: monto
+                })
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(err => { throw new Error(err.mensaje || "Error al guardar rubro"); });
+                return res.json();
+            })
+            .then(() => {
+                cancelarEdicionRubroProy();
+                cargarRubrosProyectos(actividadRubrosProyId);
+            })
+            .catch(err => alert("Error: " + err.message));
+        }
+
     </script>
 </section>
 </body>

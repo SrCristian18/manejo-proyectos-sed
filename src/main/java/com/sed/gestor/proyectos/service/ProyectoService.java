@@ -156,29 +156,36 @@ public class ProyectoService {
 
     //Actividades
     @Transactional
-    public Actividad agregarActividad(Long proyectoId, String nombre, BigDecimal presupuestoInicial, FuenteFinanciacion fuente, String descripcion) {
+    public Actividad agregarActividad(Long proyectoId, String nombre, BigDecimal presupuestoInicial,
+                                      FuenteFinanciacion fuente, String descripcion,
+                                      BigDecimal metaCuatrienio, String unidadMedida) {
         Proyecto proyecto = obtenerPorId(proyectoId);
-        Actividad actividad = new Actividad(nombre, presupuestoInicial, fuente, descripcion, proyecto);
+        BigDecimal montoInit = presupuestoInicial != null ? presupuestoInicial : BigDecimal.ZERO;
+        FuenteFinanciacion fuenteAct = fuente != null ? fuente : FuenteFinanciacion.LIBRE_DESTINACION;
+
+        Actividad actividad = new Actividad(nombre.trim(), montoInit, fuenteAct, descripcion, proyecto);
+        actividad.setMetaCuatrienio(metaCuatrienio != null ? metaCuatrienio : BigDecimal.ZERO);
+        actividad.setUnidadMedida(unidadMedida != null && !unidadMedida.isBlank() ? unidadMedida.trim() : "Unidades");
+
         proyecto.addActividad(actividad);
         return actividadRepository.save(actividad);
     }
 
     @Transactional
     public Actividad editarActividad(Long actividadId, String nombre, BigDecimal presupuestoInicial,
-                                     FuenteFinanciacion fuente, String descripcion) {
+                                     FuenteFinanciacion fuente, String descripcion,
+                                     BigDecimal metaCuatrienio, String unidadMedida) {
         Actividad actividad = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada con ID: " + actividadId));
 
         boolean tieneMovimientos = !detalleMovimientoRepository.findByActividadId(actividadId).isEmpty();
         boolean tieneRubros = !rubroGastoRepository.findByActividadId(actividadId).isEmpty();
 
-        // Proteger cambio de fuente si ya existen movimientos o rubros asociados
         if ((tieneMovimientos || tieneRubros) && fuente != null && actividad.getFuente() != fuente) {
             throw new IllegalStateException(
-                    "No se puede cambiar la fuente de financiación de la actividad porque ya tiene rubros o movimientos presupuestales registrados. Use la Operación #8 en Seguimiento Presupuestal.");
+                    "No se puede cambiar la fuente de financiación porque la actividad ya tiene rubros o movimientos presupuestales registrados. Use la Operación #8 en Seguimiento Presupuestal.");
         }
 
-        // Proteger reducción del presupuesto inicial por debajo de lo ya distribuido en rubros
         if (presupuestoInicial != null && tieneRubros) {
             BigDecimal totalRubros = rubroGastoRepository.findByActividadId(actividadId).stream()
                     .map(r -> r.getMontoAsignado() != null ? r.getMontoAsignado() : BigDecimal.ZERO)
@@ -191,7 +198,7 @@ public class ProyectoService {
             }
         }
 
-        actividad.setNombre(nombre);
+        actividad.setNombre(nombre.trim());
         if (presupuestoInicial != null) {
             actividad.setPresupuestoInicial(presupuestoInicial);
         }
@@ -199,14 +206,33 @@ public class ProyectoService {
             actividad.setFuente(fuente);
         }
         actividad.setDescripcion(descripcion);
+        if (metaCuatrienio != null) {
+            actividad.setMetaCuatrienio(metaCuatrienio);
+        }
+        if (unidadMedida != null && !unidadMedida.isBlank()) {
+            actividad.setUnidadMedida(unidadMedida.trim());
+        }
+
         return actividadRepository.save(actividad);
     }
 
     @Transactional
     public void eliminarActividad(Long actividadId) {
-        if (!actividadRepository.existsById(actividadId)) {
-            throw new EntityNotFoundException("Actividad no encontrada con ID: " + actividadId);
+        Actividad actividad = actividadRepository.findById(actividadId)
+                .orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada con ID: " + actividadId));
+
+        if (!detalleMovimientoRepository.findByActividadId(actividadId).isEmpty()) {
+            throw new IllegalStateException(
+                    "No se puede eliminar la actividad '" + actividad.getNombre()
+                    + "' porque ya tiene movimientos presupuestales (CDP/RP o modificaciones) registrados.");
         }
-        actividadRepository.deleteById(actividadId);
+
+        if (actividad.getAvances() != null && !actividad.getAvances().isEmpty()) {
+            throw new IllegalStateException(
+                    "No se puede eliminar la actividad '" + actividad.getNombre()
+                    + "' porque ya tiene avances físicos reportados en Metas.");
+        }
+
+        actividadRepository.delete(actividad);
     }
 }
