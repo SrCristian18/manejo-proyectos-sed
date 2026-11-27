@@ -109,7 +109,7 @@
                                                         <tr th:each="p : ${metaProd.proyectos}">
                                                             <td><span class="badge bg-primary" th:text="${p.codigoBpin}">BPIN</span></td>
                                                             <td class="fw-semibold small" th:text="${p.nombre}">Nombre Proyecto</td>
-                                                            <td><span class="badge bg-secondary" th:text="${p.vigencia}">2026</span></td>
+                                                            <td><span class="badge bg-secondary" th:text="${p.etiquetaHorizonte}">2024 - 2026</span></td>
                                                             <td class="text-center">
                                                                 <span class="badge bg-info text-dark" th:text="${(p.actividades != null ? p.actividades.size() : 0) + ' Actividades'}">0</span>
                                                             </td>
@@ -165,10 +165,10 @@
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-bold">Meta de Producto (Jerarquía PDD)</label>
-                                <select id="selectMetaProducto" name="metaProducto" class="form-select" required>
+                                <select id="selectMetaProducto" name="metaProductoId" class="form-select" required>
                                     <option value="" disabled selected>-- Seleccione una Meta Producto --</option>
                                     <option th:each="mp : ${metasProducto}" 
-                                            th:value="${mp.codigo + ' - ' + mp.descripcion}" 
+                                            th:value="${mp.id}" 
                                             th:text="${mp.codigo + ' - ' + mp.descripcion}">
                                     </option>
                                 </select>

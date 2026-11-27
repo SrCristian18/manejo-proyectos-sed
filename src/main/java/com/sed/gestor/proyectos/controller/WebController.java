@@ -392,9 +392,15 @@ public class WebController {
     }
 
     @PostMapping ("/proyectos/guardar")
-    public String guardarProyecto(@ModelAttribute ProyectoDTO proyectoDTO){
-        proyectoService.guardarOActualizar(proyectoDTO);
-        return "redirect:/proyectos?vigencia=" + (proyectoDTO.getVigencia() != null ? proyectoDTO.getVigencia() : 2026);
+    public String guardarProyecto(@ModelAttribute ProyectoDTO proyectoDTO, RedirectAttributes redirectAttributes){
+        try {
+            Proyecto guardado = proyectoService.guardarOActualizar(proyectoDTO);
+            redirectAttributes.addFlashAttribute("mensajeExito", "Proyecto guardado correctamente (" + guardado.getEtiquetaHorizonte() + ").");
+            return "redirect:/proyectos?vigencia=" + guardado.getVigencia();
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensajeError", e.getMessage());
+            return "redirect:/proyectos?vigencia=" + (proyectoDTO.getVigencia() != null ? proyectoDTO.getVigencia() : 2026);
+        }
     }
 
     @PostMapping("/proyectos/metas-producto/guardar")

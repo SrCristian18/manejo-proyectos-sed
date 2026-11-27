@@ -2,7 +2,6 @@ package com.sed.gestor.proyectos.service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -53,9 +52,7 @@ public class ProyectoService {
         if (vigencia == null){
             return proyectoRepository.findAll();
         }
-        return proyectoRepository.findAll().stream()
-            .filter(p -> p.getVigencia() != null && p.getVigencia() <= vigencia && vigencia <= 2027)
-            .collect(Collectors.toList());
+        return proyectoRepository.findActivosEnVigencia(vigencia);
     }
 
     @Transactional (readOnly = true)
@@ -67,29 +64,45 @@ public class ProyectoService {
     //Proyectos
     @Transactional
     public Proyecto guardarOActualizar(ProyectoDTO dto) {
-        Proyecto proyecto;
-        if (dto.getId() != null) {
-            proyecto = obtenerPorId(dto.getId());
-        } else {
-            proyecto = new Proyecto();
+        if (dto.getCodigoBpin() == null || dto.getCodigoBpin().isBlank()) {
+            throw new IllegalArgumentException("El código BPIN es obligatorio.");
+        }
+        if (dto.getVigencia() == null) {
+            throw new IllegalArgumentException("La vigencia inicial es obligatoria.");
         }
 
-        proyecto.setCodigoBpin(dto.getCodigoBpin());
-        proyecto.setNombre(dto.getNombre());
-        proyecto.setVigencia(dto.getVigencia());
+        String bpinLimpio = dto.getCodigoBpin().trim();
+        proyectoRepository.findByCodigoBpin(bpinLimpio).ifPresent(existente -> {
+            if (dto.getId() == null || !existente.getId().equals(dto.getId())) {
+                throw new IllegalArgumentException("Ya existe un proyecto registrado con el código BPIN: " + bpinLimpio);
+            }
+        });
 
+        MetaProducto metaProducto = null;
         if (dto.getMetaProductoId() != null) {
-            MetaProducto metaProducto = metaProductoRepository.findById(dto.getMetaProductoId())
+            metaProducto = metaProductoRepository.findById(dto.getMetaProductoId())
                     .orElseThrow(() -> new EntityNotFoundException("Meta Producto no encontrada con ID: " + dto.getMetaProductoId()));
-            proyecto.setMetaProducto(metaProducto);
-        } else {
-            proyecto.setMetaProducto(null);
         }
+
+        Integer vigenciaFinCalculada = (dto.getVigenciaFin() != null)
+                ? dto.getVigenciaFin()
+                : Proyecto.resolverVigenciaFin(dto.getVigencia(), metaProducto);
+
+        if (vigenciaFinCalculada < dto.getVigencia()) {
+            throw new IllegalArgumentException("La vigencia de cierre no puede ser menor a la vigencia inicial.");
+        }
+
+        Proyecto proyecto = (dto.getId() != null) ? obtenerPorId(dto.getId()) : new Proyecto();
+        proyecto.setCodigoBpin(bpinLimpio);
+        proyecto.setNombre(dto.getNombre().trim());
+        proyecto.setVigencia(dto.getVigencia());
+        proyecto.setVigenciaFin(vigenciaFinCalculada);
+        proyecto.setMetaProducto(metaProducto);
 
         return proyectoRepository.save(proyecto);
     }
 
-        @Transactional 
+    @Transactional 
     public Proyecto guardarDesdeDTO(ProyectoDTO dto){
         Proyecto proyecto;
         if(dto.getId() != null){

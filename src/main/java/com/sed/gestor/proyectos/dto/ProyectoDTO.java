@@ -6,16 +6,19 @@ public class ProyectoDTO {
     private String codigoBpin;
     private String nombre;
     private Integer vigencia;
+    private Integer vigenciaFin;
     private Long metaProductoId; // ID de la MetaProducto a relacionar
 
     public ProyectoDTO() {
     }
 
-    public ProyectoDTO(Long id, String codigoBpin, String nombre, Integer vigencia, Long metaProductoId) {
+    public ProyectoDTO(Long id, String codigoBpin, String nombre, Integer vigencia, Integer vigenciaFin,
+            Long metaProductoId) {
         this.id = id;
         this.codigoBpin = codigoBpin;
         this.nombre = nombre;
         this.vigencia = vigencia;
+        this.vigenciaFin = vigenciaFin;
         this.metaProductoId = metaProductoId;
     }
 
@@ -57,5 +60,13 @@ public class ProyectoDTO {
 
     public void setMetaProductoId(Long metaProductoId) {
         this.metaProductoId = metaProductoId;
+    }
+
+    public Integer getVigenciaFin() {
+        return vigenciaFin;
+    }
+
+    public void setVigenciaFin(Integer vigenciaFin) {
+        this.vigenciaFin = vigenciaFin;
     }
 }

@@ -64,9 +64,9 @@ VALUES
 (4, 6, 2027, 125);
 
 -- 8. PROYECTOS
-INSERT IGNORE INTO proyectos (id, codigo_bpin, nombre, vigencia, meta_producto_id)
+INSERT IGNORE INTO proyectos (id, codigo_bpin, nombre, vigencia, vigencia_fin, meta_producto_id)
 VALUES 
-(1, '2024130010250', 'Generación de Oportunidades de Acceso y Permanencia a la Educación para el Trabajo y el Desarrollo Humano para Egresados del Sistema', 2024, 6);
+(1, '2024130010250', 'Generación de Oportunidades de Acceso y Permanencia a la Educación para el Trabajo y el Desarrollo Humano para Egresados del Sistema', 2024, 2027, 6);
 
 -- 9. ACTIVIDADES (Actualizadas con meta_cuatrienio y unidad_medida)
 INSERT IGNORE INTO actividades (id, nombre, presupuesto_inicial, fuente, descripcion, meta_cuatrienio, unidad_medida, fecha_inicio, fecha_cierre, proyecto_id)
