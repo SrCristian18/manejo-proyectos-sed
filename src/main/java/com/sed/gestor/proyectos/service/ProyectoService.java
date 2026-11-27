@@ -20,6 +20,7 @@ import jakarta.persistence.EntityNotFoundException;
 import com.sed.gestor.proyectos.repository.ActividadRepository;
 import com.sed.gestor.proyectos.repository.DetalleMovimientoRepository;
 import com.sed.gestor.proyectos.repository.MetaProductoRepository;
+import com.sed.gestor.proyectos.repository.MovimientoPresupuestalRepository;
 
 @Service 
 public class ProyectoService {
@@ -28,18 +29,20 @@ public class ProyectoService {
     private final ActividadRepository actividadRepository;
     private final DetalleMovimientoRepository detalleMovimientoRepository;
     private final RubroGastoRepository rubroGastoRepository;
+    private final MovimientoPresupuestalRepository movimientoRepository;
 
     //Lecturas generales
 
     @Autowired 
     public ProyectoService(ProyectoRepository proyectoRepository, MetaProductoRepository metaProductoRepository,
             ActividadRepository actividadRepository, DetalleMovimientoRepository detalleMovimientoRepository,
-            RubroGastoRepository rubroGastoRepository) {
+            RubroGastoRepository rubroGastoRepository, MovimientoPresupuestalRepository movimientoRepository) {
         this.proyectoRepository = proyectoRepository;
         this.metaProductoRepository = metaProductoRepository;
         this.actividadRepository = actividadRepository;
         this.detalleMovimientoRepository = detalleMovimientoRepository;
         this.rubroGastoRepository = rubroGastoRepository;
+        this.movimientoRepository = movimientoRepository;
     }
 
     @Transactional (readOnly = true)
@@ -131,10 +134,24 @@ public class ProyectoService {
 
     @Transactional
     public void eliminar(Long id) {
-        if(!proyectoRepository.existsById(id)){
-            throw new EntityNotFoundException("Proyecto no encontrado con ID: "+ id);
+        Proyecto proyecto = obtenerPorId(id);
+
+        boolean tieneMovimientos = !movimientoRepository.findByProyectoId(id).isEmpty();
+        if (tieneMovimientos) {
+            throw new IllegalStateException(
+                    "No se puede eliminar el proyecto '" + proyecto.getCodigoBpin()
+                    + "' porque ya tiene movimientos presupuestales (CDP/RP o modificaciones) registrados.");
         }
-        proyectoRepository.deleteById(id);
+
+        boolean tieneAvancesFisicos = proyecto.getActividades().stream()
+                .anyMatch(act -> act.getAvances() != null && !act.getAvances().isEmpty());
+        if (tieneAvancesFisicos) {
+            throw new IllegalStateException(
+                    "No se puede eliminar el proyecto '" + proyecto.getCodigoBpin()
+                    + "' porque sus actividades ya tienen reportes de avance físico en Metas.");
+        }
+
+        proyectoRepository.delete(proyecto);
     }
 
     //Actividades

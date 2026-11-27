@@ -372,18 +372,38 @@ public class WebController {
         List<Proyecto> proyectos = proyectoService.obtenerPorVigencia(vigencia);
         List<MetaProducto> metasProducto = metaService.obtenerTodasLasMetasProducto();
 
+        // Construir lista dinámica de años del Plan de Desarrollo vigente (sin años quemados)
+        List<Integer> vigenciasPdd = new ArrayList<>();
+        if (lineas != null && !lineas.isEmpty() && lineas.get(0).getPlanDesarrollo() != null) {
+            Integer inicio = lineas.get(0).getPlanDesarrollo().getAnoInicio();
+            Integer fin = lineas.get(0).getPlanDesarrollo().getAnoFin();
+            if (inicio != null && fin != null) {
+                for (int y = inicio; y <= fin; y++) {
+                    vigenciasPdd.add(y);
+                }
+            }
+        }
+        if (vigenciasPdd.isEmpty()) {
+            int base = vigencia - Math.floorMod(vigencia, 4);
+            for (int y = base; y <= base + 3; y++) {
+                vigenciasPdd.add(y);
+            }
+        }
+
         Map<Long, ResumenProyectoPresupuestoDTO> presupuestosPorProyecto = new HashMap<>();
-        if(proyectos != null){
-                for(Proyecto p : proyectos){
+        if (proyectos != null) {
+            for (Proyecto p : proyectos) {
                 List<PresupuestoResumenDTO> resAct = presupuestoService.obtenerResumenPresupuestal(p.getId());
                 presupuestosPorProyecto.put(p.getId(), presupuestoService.obtenerResumenGlobalProyecto(resAct));
             }
         }
+
         model.addAttribute("lineasEstrategicas", lineas);
         model.addAttribute("proyectos", proyectos != null ? proyectos : new ArrayList<>());
-        model.addAttribute("presupuestosPorProyecto", presupuestosPorProyecto);
         model.addAttribute("metasProducto", metasProducto);
         model.addAttribute("vigencia", vigencia);
+        model.addAttribute("vigenciasPdd", vigenciasPdd);
+        model.addAttribute("presupuestosPorProyecto", presupuestosPorProyecto);
         model.addAttribute("fuentes", FuenteFinanciacion.values());
         model.addAttribute("nuevoProyecto", new ProyectoDTO());
         model.addAttribute("nuevaMetaDTO", new MetaProductoDTO());
@@ -408,6 +428,19 @@ public class WebController {
         metaService.guardarMetaProducto(metaDTO);
         redirectAttributes.addFlashAttribute("mensajeExito", "Meta Producto creada/actualizada.");
         return "redirect:/proyectos";
+    }
+
+    @PostMapping("/proyectos/eliminar/{id}")
+    public String eliminarProyecto(@PathVariable Long id,
+                                   @RequestParam(defaultValue = "2026") Integer vigencia,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            proyectoService.eliminar(id);
+            redirectAttributes.addFlashAttribute("mensajeExito", "Proyecto eliminado correctamente.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensajeError", e.getMessage());
+        }
+        return "redirect:/proyectos?vigencia=" + vigencia;
     }
 
     @PostMapping ("/proyectos/{id}/actividad")

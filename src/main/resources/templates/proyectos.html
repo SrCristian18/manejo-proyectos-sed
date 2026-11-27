@@ -3,26 +3,34 @@
       th:replace="~{layout :: main-layout('Estructura PDD y Proyectos', ~{::section})}">
 <body>
 <section>
-    <!-- Encabezado con Filtro de Vigencia y Botón Nuevo Proyecto -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Alertas de Feedback -->
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i><span th:text="${mensajeExito}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${mensajeError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Encabezado con Filtro Dinámico de Vigencia y Botón Nuevo Proyecto -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h3 class="fw-bold mb-0"><i class="fa-solid fa-sitemap text-primary me-2"></i>Proyectos del PDD</h3>
-            <p class="text-muted mb-0">Configuración jerárquica del PDD</p>
+            <p class="text-muted mb-0">Configuración jerárquica y gestión cuatrienal de proyectos</p>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <!-- Selector de Vigencia -->
             <form method="get" action="/proyectos" class="d-flex align-items-center gap-2">
                 <label class="fw-bold me-1 mb-0"><i class="fa-solid fa-calendar me-1"></i>Vigencia:</label>
                 <select name="vigencia" class="form-select fw-bold border-primary shadow-sm" onchange="this.form.submit()">
-                    <option value="2024" th:selected="${vigencia == 2024}">2024</option>
-                    <option value="2025" th:selected="${vigencia == 2025}">2025</option>
-                    <option value="2026" th:selected="${vigencia == 2026}">2026</option>
-                    <option value="2027" th:selected="${vigencia == 2027}">2027</option>
+                    <option th:each="anio : ${vigenciasPdd}" 
+                            th:value="${anio}" 
+                            th:text="${anio}" 
+                            th:selected="${vigencia == anio}">2026</option>
                 </select>
             </form>
             
-            <!-- Botón Azul Nuevo Proyecto -->
-            <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearProyecto" onclick="limpiarFormularioProyecto()">
+            <button class="btn btn-primary fw-bold shadow-sm" onclick="abrirModalNuevoProyecto()">
                 <i class="fa-solid fa-plus me-1"></i> Nuevo Proyecto
             </button>
         </div>
@@ -70,7 +78,6 @@
                                                 <span class="small fw-semibold" th:text="${metaProd.descripcion}">Meta Producto</span>
                                             </div>
                                             
-                                            <!-- Botón Desplegable de Proyectos asociable a la Meta Producto -->
                                             <div>
                                                 <button class="btn btn-sm btn-outline-success fw-bold py-0" 
                                                         type="button"
@@ -86,8 +93,7 @@
                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <span class="fw-bold text-secondary small"><i class="fa-solid fa-folder-open me-1"></i>Proyectos vinculados:</span>
                                                 <button class="btn btn-sm btn-link text-primary p-0 fw-bold small" 
-                                                        th:data-mp-codigo="${metaProd.codigo}"
-                                                        th:data-mp-desc="${metaProd.descripcion}"
+                                                        th:data-mp-id="${metaProd.id}"
                                                         th:data-mr-desc="${metaRes.descripcion}"
                                                         onclick="preSeleccionarMetaProducto(this)">
                                                     <i class="fa-solid fa-plus me-1"></i>Crear proyecto en esta meta
@@ -100,29 +106,71 @@
                                                         <tr>
                                                             <th>BPIN</th>
                                                             <th>Nombre del Proyecto</th>
-                                                            <th>Vigencia</th>
+                                                            <th>Horizonte</th>
+                                                            <th class="text-end">Presupuesto Def.</th>
                                                             <th class="text-center">Actividades</th>
-                                                            <th class="text-end">Acciones</th>
+                                                            <th class="text-end" style="width: 240px;">Acciones</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <tr th:each="p : ${metaProd.proyectos}">
-                                                            <td><span class="badge bg-primary" th:text="${p.codigoBpin}">BPIN</span></td>
+                                                        <tr th:each="p : ${metaProd.proyectos}" th:if="${p.estaActivoEnVigencia(vigencia)}">
+                                                            <td><span class="badge bg-primary font-monospace" th:text="${p.codigoBpin}">BPIN</span></td>
                                                             <td class="fw-semibold small" th:text="${p.nombre}">Nombre Proyecto</td>
-                                                            <td><span class="badge bg-secondary" th:text="${p.etiquetaHorizonte}">2024 - 2026</span></td>
+                                                            <td><span class="badge bg-secondary" th:text="${p.etiquetaHorizonte}">2024 - 2027</span></td>
+                                                            <td class="text-end fw-bold small text-dark"
+                                                                th:text="${presupuestosPorProyecto.containsKey(p.id) ? ('$' + #numbers.formatDecimal(presupuestosPorProyecto.get(p.id).valorTotalDefinitivo, 1, 'POINT', 0, 'COMMA')) : '$0'}">$0</td>
                                                             <td class="text-center">
-                                                                <span class="badge bg-info text-dark" th:text="${(p.actividades != null ? p.actividades.size() : 0) + ' Actividades'}">0</span>
+                                                                <span class="badge bg-info text-dark" th:text="${(p.actividades != null ? p.actividades.size() : 0) + ' Act.'}">0</span>
                                                             </td>
                                                             <td class="text-end">
-                                                                <button class="btn btn-sm btn-outline-success py-0" 
-                                                                        th:onclick="'abrirModalAgregarActividad(' + ${p.id} + ')'"
-                                                                        title="Agregar Actividad">
-                                                                    <i class="fa-solid fa-plus me-1"></i> Actividad
-                                                                </button>
+                                                                <div class="btn-group btn-group-sm" role="group">
+                                                                    <!-- 1. Ficha Resumen e Integración Presupuesto / Metas -->
+                                                                    <button type="button" class="btn btn-outline-info"
+                                                                            th:data-bpin="${p.codigoBpin}"
+                                                                            th:data-nombre="${p.nombre}"
+                                                                            th:data-horizonte="${p.etiquetaHorizonte}"
+                                                                            th:data-mp="${metaProd.codigo + ' - ' + metaProd.descripcion}"
+                                                                            th:data-mr="${metaRes.codigo + ' - ' + metaRes.descripcion}"
+                                                                            th:data-id="${p.id}"
+                                                                            onclick="abrirModalDetalleProyecto(this)"
+                                                                            title="Ver Ficha y Accesos a Presupuesto / Metas">
+                                                                        <i class="fa-solid fa-eye"></i>
+                                                                    </button>
+
+                                                                    <!-- 2. Agregar Actividad -->
+                                                                    <button type="button" class="btn btn-outline-success" 
+                                                                            th:onclick="'abrirModalAgregarActividad(' + ${p.id} + ')'"
+                                                                            title="Agregar Actividad">
+                                                                        <i class="fa-solid fa-plus"></i> Act.
+                                                                    </button>
+
+                                                                    <!-- 3. Editar Proyecto -->
+                                                                    <button type="button" class="btn btn-outline-primary"
+                                                                            th:data-id="${p.id}"
+                                                                            th:data-bpin="${p.codigoBpin}"
+                                                                            th:data-nombre="${p.nombre}"
+                                                                            th:data-vigencia="${p.vigencia}"
+                                                                            th:data-vigencia-fin="${p.vigenciaFin}"
+                                                                            th:data-mp-id="${metaProd.id}"
+                                                                            th:data-mr-desc="${metaRes.descripcion}"
+                                                                            onclick="abrirModalEditarProyecto(this)"
+                                                                            title="Editar Proyecto">
+                                                                        <i class="fa-solid fa-pen"></i>
+                                                                    </button>
+
+                                                                    <!-- 4. Eliminar Proyecto -->
+                                                                    <form th:action="@{/proyectos/eliminar/{id}(id=${p.id})}" method="post" class="d-inline"
+                                                                          onsubmit="return confirm('¿Está seguro de eliminar este proyecto? Solo se permitirá si no tiene movimientos presupuestales ni avances físicos.');">
+                                                                        <input type="hidden" name="vigencia" th:value="${vigencia}">
+                                                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar Proyecto">
+                                                                            <i class="fa-solid fa-trash"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                         <tr th:if="${metaProd.proyectos == null or metaProd.proyectos.isEmpty()}">
-                                                            <td colspan="5" class="text-center text-muted small py-2">
+                                                            <td colspan="6" class="text-center text-muted small py-2">
                                                                 No hay proyectos vinculados a esta Meta Producto.
                                                             </td>
                                                         </tr>
@@ -140,28 +188,36 @@
         </div>
     </div>
 
-    <!-- MODAL 1: CREAR PROYECTO -->
+    <!-- MODAL 1: CREAR / EDITAR PROYECTO -->
     <div class="modal fade" id="modalCrearProyecto" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-folder-plus text-primary me-2"></i>Crear Nuevo Proyecto</h5>
+                    <h5 class="modal-title fw-bold" id="modalProyectoTitulo">
+                        <i class="fa-solid fa-folder-plus text-primary me-2"></i>Crear Nuevo Proyecto
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form method="post" action="/proyectos/guardar">
                     <div class="modal-body">
+                        <input type="hidden" id="proyectoEditId" name="id">
                         <div class="row g-3">
-                            <div class="col-md-8">
+                            <div class="col-md-6">
                                 <label class="form-label fw-bold">Código BPIN</label>
-                                <input type="text" name="codigoBpin" class="form-control" placeholder="Ej: 2026130010001" required>
+                                <input type="text" id="inputCodigoBpin" name="codigoBpin" class="form-control" placeholder="Ej: 2026130010001" required>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Vigencia Fiscal</label>
-                                <input type="number" name="vigencia" class="form-control fw-bold" th:value="${vigencia}" required>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Vigencia Inicial</label>
+                                <input type="number" id="inputVigenciaInicio" name="vigencia" class="form-control fw-bold" 
+                                       th:value="${vigencia}" oninput="recalcularVigenciaFin()" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Vigencia Cierre</label>
+                                <input type="number" id="inputVigenciaFin" name="vigenciaFin" class="form-control fw-bold" required>
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-bold">Nombre del Proyecto</label>
-                                <input type="text" name="nombre" class="form-control" placeholder="Ingrese el nombre completo del proyecto..." required>
+                                <input type="text" id="inputNombreProyecto" name="nombre" class="form-control" placeholder="Ingrese el nombre completo del proyecto..." required>
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-bold">Meta de Producto (Jerarquía PDD)</label>
@@ -169,26 +225,78 @@
                                     <option value="" disabled selected>-- Seleccione una Meta Producto --</option>
                                     <option th:each="mp : ${metasProducto}" 
                                             th:value="${mp.id}" 
+                                            th:data-mr-desc="${mp.programa != null and mp.programa.metaResultado != null ? mp.programa.metaResultado.descripcion : ''}"
                                             th:text="${mp.codigo + ' - ' + mp.descripcion}">
                                     </option>
                                 </select>
                             </div>
                             <div class="col-md-12">
-                                <label class="form-label fw-bold">Meta de Resultado</label>
-                                <textarea id="textMetaResultado" name="metaResultado" class="form-control" rows="2" placeholder="Ingrese o confirme la meta de resultado asociada..."></textarea>
+                                <label class="form-label fw-bold">Meta de Resultado Asociada (Referencia)</label>
+                                <textarea id="textMetaResultado" class="form-control bg-light" rows="2" readonly placeholder="Se completa automáticamente según la Meta de Producto..."></textarea>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary fw-bold">Guardar Proyecto</button>
+                        <button type="submit" class="btn btn-primary fw-bold">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Proyecto
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- MODAL 2: AGREGAR ACTIVIDADES AL PROYECTO -->
+    <!-- MODAL 2: FICHA DETALLE DEL PROYECTO E INTEGRACIÓN -->
+    <div class="modal fade" id="modalDetalleProyecto" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info-subtle">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="fa-solid fa-circle-info text-info me-2"></i>Ficha Técnica del Proyecto
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="small text-muted fw-bold text-uppercase">Código BPIN</div>
+                            <div class="fs-5 fw-bold text-primary font-monospace" id="detBpin"></div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="small text-muted fw-bold text-uppercase">Horizonte de Vigencias</div>
+                            <div class="fs-5 fw-bold text-dark" id="detHorizonte"></div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="small text-muted fw-bold text-uppercase">Nombre del Proyecto</div>
+                            <div class="fw-semibold text-dark" id="detNombre"></div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="small text-muted fw-bold text-uppercase">Meta de Producto</div>
+                            <div class="small text-dark" id="detMp"></div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="small text-muted fw-bold text-uppercase">Meta de Resultado</div>
+                            <div class="small text-secondary" id="detMr"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <div class="d-flex gap-2">
+                        <a id="linkDetallePresupuesto" href="#" class="btn btn-primary fw-bold">
+                            <i class="fa-solid fa-wallet me-1"></i> Ir a Seguimiento Presupuestal
+                        </a>
+                        <a id="linkDetalleMetas" href="#" class="btn btn-success fw-bold">
+                            <i class="fa-solid fa-bullseye me-1"></i> Ir a Cumplimiento de Metas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: AGREGAR ACTIVIDADES AL PROYECTO -->
     <div class="modal fade" id="modalActividad" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -229,30 +337,72 @@
     </div>
 
     <!-- SCRIPTS AUXILIARES -->
-    <script>
-        function limpiarFormularioProyecto() {
+    <script th:inline="javascript">
+        const vigenciaActualFiltro = /*[[${vigencia}]]*/ 2026;
+
+        function calcularFinCuatrienio(inicio) {
+            const anio = parseInt(inicio, 10);
+            if (isNaN(anio)) return '';
+            const offset = ((anio % 4) + 4) % 4;
+            return anio - offset + 3;
+        }
+
+        function recalcularVigenciaFin() {
+            const inicio = document.getElementById('inputVigenciaInicio').value;
+            document.getElementById('inputVigenciaFin').value = calcularFinCuatrienio(inicio);
+        }
+
+        document.getElementById('selectMetaProducto').addEventListener('change', function () {
+            const opt = this.options[this.selectedIndex];
+            document.getElementById('textMetaResultado').value = opt ? (opt.getAttribute('data-mr-desc') || '') : '';
+        });
+
+        function abrirModalNuevoProyecto() {
+            document.getElementById('modalProyectoTitulo').innerHTML = '<i class="fa-solid fa-folder-plus text-primary me-2"></i>Crear Nuevo Proyecto';
+            document.getElementById('proyectoEditId').value = '';
+            document.getElementById('inputCodigoBpin').value = '';
+            document.getElementById('inputNombreProyecto').value = '';
+            document.getElementById('inputVigenciaInicio').value = vigenciaActualFiltro;
+            recalcularVigenciaFin();
             document.getElementById('selectMetaProducto').value = '';
             document.getElementById('textMetaResultado').value = '';
+            new bootstrap.Modal(document.getElementById('modalCrearProyecto')).show();
         }
 
         function preSeleccionarMetaProducto(btn) {
-            const mpCodigo = btn.getAttribute('data-mp-codigo');
-            const mpDesc = btn.getAttribute('data-mp-desc');
+            abrirModalNuevoProyecto();
+            const mpId = btn.getAttribute('data-mp-id');
             const mrDesc = btn.getAttribute('data-mr-desc');
-            
-            const select = document.getElementById('selectMetaProducto');
-            const valorBuscado = mpCodigo + ' - ' + mpDesc;
-            
-            // Buscar y seleccionar opción coincidente en el desplegable
-            for (let i = 0; i < select.options.length; i++) {
-                if (select.options[i].value === valorBuscado || select.options[i].text.includes(mpCodigo)) {
-                    select.selectedIndex = i;
-                    break;
-                }
-            }
-            
+            document.getElementById('selectMetaProducto').value = mpId;
             document.getElementById('textMetaResultado').value = mrDesc || '';
+        }
+
+        function abrirModalEditarProyecto(btn) {
+            document.getElementById('modalProyectoTitulo').innerHTML = '<i class="fa-solid fa-pen-to-square text-primary me-2"></i>Editar Proyecto';
+            document.getElementById('proyectoEditId').value = btn.getAttribute('data-id');
+            document.getElementById('inputCodigoBpin').value = btn.getAttribute('data-bpin');
+            document.getElementById('inputNombreProyecto').value = btn.getAttribute('data-nombre');
+            const vigIni = btn.getAttribute('data-vigencia');
+            const vigFin = btn.getAttribute('data-vigencia-fin');
+            document.getElementById('inputVigenciaInicio').value = vigIni;
+            document.getElementById('inputVigenciaFin').value = vigFin || calcularFinCuatrienio(vigIni);
+            document.getElementById('selectMetaProducto').value = btn.getAttribute('data-mp-id');
+            document.getElementById('textMetaResultado').value = btn.getAttribute('data-mr-desc') || '';
             new bootstrap.Modal(document.getElementById('modalCrearProyecto')).show();
+        }
+
+        function abrirModalDetalleProyecto(btn) {
+            const pId = btn.getAttribute('data-id');
+            document.getElementById('detBpin').textContent = btn.getAttribute('data-bpin');
+            document.getElementById('detHorizonte').textContent = btn.getAttribute('data-horizonte');
+            document.getElementById('detNombre').textContent = btn.getAttribute('data-nombre');
+            document.getElementById('detMp').textContent = btn.getAttribute('data-mp');
+            document.getElementById('detMr').textContent = btn.getAttribute('data-mr');
+
+            document.getElementById('linkDetallePresupuesto').href = '/presupuesto?proyectoId=' + pId + '&vigencia=' + vigenciaActualFiltro;
+            document.getElementById('linkDetalleMetas').href = '/metas?proyectoId=' + pId + '&vigencia=' + vigenciaActualFiltro;
+
+            new bootstrap.Modal(document.getElementById('modalDetalleProyecto')).show();
         }
 
         function abrirModalAgregarActividad(proyectoId) {
